@@ -10,12 +10,14 @@ import {
   Body1Strong,
   Caption1,
   Subtitle2,
+  Badge,
 } from '@fluentui/react-components';
 import {
   SparkleRegular,
   CheckmarkRegular,
   EditRegular,
   DismissRegular,
+  Dismiss24Regular,
 } from '@fluentui/react-icons';
 
 const useStyles = makeStyles({
@@ -32,6 +34,26 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
     ...shorthands.borderRadius(tokens.borderRadiusMedium),
     ...shorthands.border('1px', 'solid', tokens.colorNeutralStroke1),
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    minWidth: '24px',
+    width: '24px',
+    height: '24px',
+    ...shorthands.padding('0'),
+    color: tokens.colorNeutralForeground3,
+    ':hover': {
+      color: tokens.colorNeutralForeground1,
+    },
+  },
+  suggestedBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+    marginBottom: '12px',
   },
   header: {
     display: 'flex',
@@ -81,10 +103,21 @@ const useStyles = makeStyles({
     ...shorthands.borderRadius('50%'),
     backgroundColor: '#107C10', // Fluent UI success green
   },
+  confidenceDotLow: {
+    width: '8px',
+    height: '8px',
+    ...shorthands.borderRadius('50%'),
+    backgroundColor: '#F7630C', // Fluent UI warning amber
+  },
   confidenceText: {
     fontSize: '12px',
     fontWeight: '500',
     color: '#107C10',
+  },
+  confidenceTextLow: {
+    fontSize: '12px',
+    fontWeight: '500',
+    color: '#F7630C',
   },
   sourceText: {
     fontSize: '11px',
@@ -103,26 +136,91 @@ const useStyles = makeStyles({
     ...shorthands.gap('8px'),
     justifyContent: 'flex-end',
   },
+  autoDismissContainer: {
+    marginTop: '16px',
+    paddingTop: '12px',
+    ...shorthands.borderTop('1px', 'solid', tokens.colorNeutralStroke2),
+  },
+  autoDismissText: {
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground3,
+    marginBottom: '8px',
+    textAlign: 'center',
+  },
+  progressBar: {
+    height: '3px',
+    backgroundColor: tokens.colorNeutralStroke2,
+    ...shorthands.borderRadius('2px'),
+    ...shorthands.overflow('hidden'),
+  },
+  progressBarFill: {
+    height: '100%',
+    width: '100%',
+    backgroundColor: tokens.colorBrandBackground,
+    ...shorthands.borderRadius('2px'),
+  },
+  footerLink: {
+    marginTop: '12px',
+    textAlign: 'center',
+  },
+  footerLinkButton: {
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground3,
+    textDecoration: 'none',
+    cursor: 'pointer',
+    ':hover': {
+      textDecoration: 'underline',
+      color: tokens.colorNeutralForeground2,
+    },
+  },
 });
 
 interface SuggestionPopupProps {
   visible: boolean;
   onClose: () => void;
+  confidenceLevel?: 'high' | 'low';
 }
 
-const SuggestionPopup: React.FC<SuggestionPopupProps> = ({ visible, onClose }) => {
+const SuggestionPopup: React.FC<SuggestionPopupProps> = ({
+  visible,
+  onClose,
+  confidenceLevel = 'high'
+}) => {
   const styles = useStyles();
+
+  const handleDontSuggest = () => {
+    alert('This feature would prevent suggestions for this app in the future.');
+  };
 
   if (!visible) {
     return null;
   }
 
+  const isHighConfidence = confidenceLevel === 'high';
+  const isLowConfidence = confidenceLevel === 'low';
+
   return (
     <div className={styles.popupContainer}>
       <Card className={styles.popup}>
+        {/* Close Button */}
+        <Button
+          appearance="transparent"
+          className={styles.closeButton}
+          icon={<DismissRegular />}
+          onClick={onClose}
+          aria-label="Close"
+        />
+
+        {/* Suggested Badge */}
+        <div className={styles.suggestedBadge}>
+          <Badge appearance="outline" color="informative" size="small">
+            Suggested
+          </Badge>
+          <SparkleRegular fontSize={14} className={styles.headerIcon} />
+        </div>
+
         {/* Header */}
         <div className={styles.header}>
-          <SparkleRegular fontSize={18} className={styles.headerIcon} />
           <Text className={styles.headerText}>Time Entry Suggestion</Text>
         </div>
 
@@ -152,8 +250,10 @@ const SuggestionPopup: React.FC<SuggestionPopupProps> = ({ visible, onClose }) =
 
         {/* Confidence Indicator */}
         <div className={styles.confidenceContainer}>
-          <div className={styles.confidenceDot} />
-          <Text className={styles.confidenceText}>High confidence</Text>
+          <div className={isLowConfidence ? styles.confidenceDotLow : styles.confidenceDot} />
+          <Text className={isLowConfidence ? styles.confidenceTextLow : styles.confidenceText}>
+            {isLowConfidence ? 'Low confidence - please verify' : 'High confidence'}
+          </Text>
         </div>
 
         {/* Source Summary */}
@@ -172,20 +272,65 @@ const SuggestionPopup: React.FC<SuggestionPopupProps> = ({ visible, onClose }) =
           >
             Dismiss
           </Button>
-          <Button
-            appearance="subtle"
-            icon={<EditRegular />}
-            onClick={onClose}
+          {isLowConfidence ? (
+            <>
+              {/* Low confidence: Edit is primary, Confirm is secondary */}
+              <Button
+                appearance="outline"
+                icon={<CheckmarkRegular />}
+                onClick={onClose}
+              >
+                Confirm
+              </Button>
+              <Button
+                appearance="primary"
+                icon={<EditRegular />}
+                onClick={onClose}
+              >
+                Edit
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* High confidence: Edit is subtle, Confirm is primary */}
+              <Button
+                appearance="subtle"
+                icon={<EditRegular />}
+                onClick={onClose}
+              >
+                Edit
+              </Button>
+              <Button
+                appearance="primary"
+                icon={<CheckmarkRegular />}
+                onClick={onClose}
+              >
+                Confirm
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Auto-Dismiss Indicator (High Confidence Only) */}
+        {isHighConfidence && (
+          <div className={styles.autoDismissContainer}>
+            <div className={styles.autoDismissText}>Auto-dismissing in 30s</div>
+            <div className={styles.progressBar}>
+              <div className={styles.progressBarFill} />
+            </div>
+          </div>
+        )}
+
+        {/* Footer Link */}
+        <div className={styles.footerLink}>
+          <span
+            className={styles.footerLinkButton}
+            onClick={handleDontSuggest}
+            role="button"
+            tabIndex={0}
           >
-            Edit
-          </Button>
-          <Button
-            appearance="primary"
-            icon={<CheckmarkRegular />}
-            onClick={onClose}
-          >
-            Confirm
-          </Button>
+            Don't suggest for this app
+          </span>
         </div>
       </Card>
     </div>
