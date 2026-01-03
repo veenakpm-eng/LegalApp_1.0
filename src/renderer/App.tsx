@@ -178,7 +178,7 @@ const useStyles = makeStyles({
     marginBottom: '12px',
     ...shorthands.padding('16px'),
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     ...shorthands.gap('16px'),
   },
   appIcon: {
@@ -198,6 +198,7 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     ...shorthands.gap('4px'),
+    textAlign: 'left',
   },
   activityMeta: {
     display: 'flex',
