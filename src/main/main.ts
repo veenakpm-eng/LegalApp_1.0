@@ -21,7 +21,10 @@ const createWindow = () => {
   });
 
   // Load the app
-  if (process.env.NODE_ENV === 'development') {
+  // In development, load from webpack dev server
+  const isDev = !app.isPackaged;
+
+  if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
