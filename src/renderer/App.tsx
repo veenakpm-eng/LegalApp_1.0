@@ -20,6 +20,7 @@ import {
   SettingsRegular,
   SearchRegular
 } from '@fluentui/react-icons';
+import SuggestionPopup from './components/SuggestionPopup';
 
 const useStyles = makeStyles({
   app: {
@@ -171,6 +172,7 @@ const useStyles = makeStyles({
 const App: React.FC = () => {
   const styles = useStyles();
   const [selectedTab, setSelectedTab] = useState('documents');
+  const [showSuggestionPopup, setShowSuggestionPopup] = useState(false);
 
   return (
     <div className={styles.app}>
@@ -253,6 +255,13 @@ const App: React.FC = () => {
               <div className={styles.activityHeader}>
                 <Subtitle2>Today's Activity</Subtitle2>
                 <Text className={styles.totalTime}>5h 32m tracked</Text>
+                <Button
+                  appearance="subtle"
+                  size="small"
+                  onClick={() => setShowSuggestionPopup(!showSuggestionPopup)}
+                >
+                  Demo Suggestion
+                </Button>
               </div>
 
               {/* Morning Time Block */}
@@ -409,6 +418,12 @@ const App: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Suggestion Popup */}
+      <SuggestionPopup
+        visible={showSuggestionPopup}
+        onClose={() => setShowSuggestionPopup(false)}
+      />
     </div>
   );
 };
