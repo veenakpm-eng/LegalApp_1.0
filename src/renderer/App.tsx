@@ -16,6 +16,7 @@ import {
 import {
   DocumentRegular,
   FolderRegular,
+  ClockRegular,
   SettingsRegular,
   SearchRegular
 } from '@fluentui/react-icons';
@@ -102,6 +103,69 @@ const useStyles = makeStyles({
       color: tokens.colorNeutralForeground4,
     },
   },
+  activityHeader: {
+    marginBottom: '24px',
+    display: 'flex',
+    alignItems: 'baseline',
+    ...shorthands.gap('12px'),
+  },
+  totalTime: {
+    color: tokens.colorBrandForeground1,
+    fontSize: '14px',
+    fontWeight: '600',
+  },
+  timeBlock: {
+    marginBottom: '32px',
+  },
+  timeBlockHeader: {
+    marginBottom: '16px',
+    color: tokens.colorNeutralForeground2,
+    fontSize: '12px',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  activityItem: {
+    marginBottom: '12px',
+    ...shorthands.padding('16px'),
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('16px'),
+  },
+  appIcon: {
+    width: '40px',
+    height: '40px',
+    ...shorthands.borderRadius('50%'),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#fff',
+  },
+  activityDetails: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('4px'),
+  },
+  activityMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    color: tokens.colorNeutralForeground3,
+    fontSize: '12px',
+  },
+  activityDuration: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground2,
+  },
+  activityTime: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+  },
 });
 
 const App: React.FC = () => {
@@ -143,6 +207,14 @@ const App: React.FC = () => {
             Documents
           </Button>
           <Button
+            appearance={selectedTab === 'activity' ? 'primary' : 'subtle'}
+            icon={<ClockRegular />}
+            className={styles.sidebarButton}
+            onClick={() => setSelectedTab('activity')}
+          >
+            Activity
+          </Button>
+          <Button
             appearance={selectedTab === 'cases' ? 'primary' : 'subtle'}
             icon={<FolderRegular />}
             className={styles.sidebarButton}
@@ -172,6 +244,146 @@ const App: React.FC = () => {
                 <Body1Strong>Motion to Dismiss - Smith v. Jones</Body1Strong>
                 <Caption1>Modified 3 days ago</Caption1>
               </Card>
+            </div>
+          )}
+
+          {selectedTab === 'activity' && (
+            <div className={styles.section}>
+              {/* Activity Header */}
+              <div className={styles.activityHeader}>
+                <Subtitle2>Today's Activity</Subtitle2>
+                <Text className={styles.totalTime}>5h 32m tracked</Text>
+              </div>
+
+              {/* Morning Time Block */}
+              <div className={styles.timeBlock}>
+                <div className={styles.timeBlockHeader}>Morning</div>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#0078D4' }}>
+                    W
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Microsoft Word</Body1Strong>
+                    <Body1>Motion to Compel Discovery - Johnson v. Tech Corp.docx</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>1h 15m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>8:30 AM - 9:45 AM</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#0072C6' }}>
+                    O
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Outlook</Body1Strong>
+                    <Body1>Email: Re: Settlement Negotiations - Wilson Case</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>22m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>9:45 AM - 10:07 AM</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#EA4335' }}>
+                    C
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Chrome</Body1Strong>
+                    <Body1>Legal Research - westlaw.com - Employment Law Precedents</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>45m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>10:15 AM - 11:00 AM</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#0078D4' }}>
+                    W
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Microsoft Word</Body1Strong>
+                    <Body1>Contract Review - Client Services Agreement - Acme Inc.docx</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>52m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>11:10 AM - 12:02 PM</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Afternoon Time Block */}
+              <div className={styles.timeBlock}>
+                <div className={styles.timeBlockHeader}>Afternoon</div>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#DC3E15' }}>
+                    A
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Adobe Acrobat</Body1Strong>
+                    <Body1>Reviewing Deposition Transcript - Smith Deposition.pdf</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>1h 8m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>1:15 PM - 2:23 PM</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#EA4335' }}>
+                    C
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Chrome</Body1Strong>
+                    <Body1>Case Management - clio.com - Time Entry & Billing</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>18m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>2:30 PM - 2:48 PM</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#0072C6' }}>
+                    O
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Outlook</Body1Strong>
+                    <Body1>Email: Client Communication - Case Status Update</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>15m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>3:00 PM - 3:15 PM</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className={styles.activityItem}>
+                  <div className={styles.appIcon} style={{ backgroundColor: '#0078D4' }}>
+                    W
+                  </div>
+                  <div className={styles.activityDetails}>
+                    <Body1Strong>Microsoft Word</Body1Strong>
+                    <Body1>Legal Brief - Summary Judgment Motion - Anderson v. State.docx</Body1>
+                    <div className={styles.activityMeta}>
+                      <span className={styles.activityDuration}>57m</span>
+                      <span>•</span>
+                      <span className={styles.activityTime}>3:30 PM - 4:27 PM</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </div>
           )}
 
