@@ -17,7 +17,12 @@ import {
   Badge,
   Divider,
   Tooltip,
-  Spinner
+  Spinner,
+  Textarea,
+  Checkbox,
+  Input,
+  Label,
+  Link
 } from '@fluentui/react-components';
 import {
   DocumentRegular,
@@ -32,7 +37,14 @@ import {
   CloudCheckmarkRegular,
   ArrowSyncRegular,
   PlugDisconnectedRegular,
-  CheckmarkCircleFilled
+  CheckmarkCircleFilled,
+  DismissRegular,
+  AddRegular,
+  ReOrderDotsVerticalRegular,
+  BuildingRegular,
+  BotRegular,
+  ListRegular,
+  DocumentCheckmarkRegular
 } from '@fluentui/react-icons';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
@@ -355,6 +367,106 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     ...shorthands.gap('4px'),
   },
+  settingsContainer: {
+    display: 'flex',
+    height: '100%',
+    ...shorthands.gap('0'),
+  },
+  settingsSidebar: {
+    width: '240px',
+    borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
+    ...shorthands.padding('16px', '0'),
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('4px'),
+  },
+  settingsTabButton: {
+    justifyContent: 'flex-start',
+    ...shorthands.padding('10px', '20px'),
+    ...shorthands.borderRadius('0'),
+    minHeight: '40px',
+  },
+  settingsContent: {
+    flex: 1,
+    ...shorthands.padding('32px'),
+    overflowY: 'auto',
+  },
+  settingsContentHeader: {
+    marginBottom: '32px',
+  },
+  firmSettingsField: {
+    marginBottom: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+  },
+  firmSettingsLabel: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground1,
+  },
+  firmSettingsHelper: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+  },
+  categoryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+    marginTop: '8px',
+  },
+  categoryItem: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    ...shorthands.padding('8px', '12px'),
+    backgroundColor: tokens.colorNeutralBackground2,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    ...shorthands.border('1px', 'solid', tokens.colorNeutralStroke1),
+  },
+  dragHandle: {
+    cursor: 'grab',
+    color: tokens.colorNeutralForeground3,
+    ':active': {
+      cursor: 'grabbing',
+    },
+  },
+  categoryText: {
+    flex: 1,
+    fontSize: '14px',
+    color: tokens.colorNeutralForeground1,
+  },
+  deleteButton: {
+    minWidth: 'auto',
+    ...shorthands.padding('4px'),
+  },
+  versionInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    marginTop: '8px',
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+  },
+  checkboxList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('12px'),
+    marginTop: '8px',
+  },
+  settingsFooter: {
+    marginTop: '32px',
+    ...shorthands.padding('16px', '0'),
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  characterCount: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+    marginTop: '4px',
+  },
 });
 
 const App: React.FC = () => {
@@ -366,6 +478,33 @@ const App: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState('2 minutes ago');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Settings state
+  const [selectedSettingsTab, setSelectedSettingsTab] = useState('general');
+
+  // Firm Settings state
+  const [entryPrefix, setEntryPrefix] = useState('Review and analysis of...');
+  const [aiInstructions, setAiInstructions] = useState(
+    `- Always categorize Westlaw/LexisNexis as Legal Research
+- Minimum billing increment: 6 minutes (0.1 hours)
+- Round up to nearest increment
+- Combine consecutive same-matter activities under 5 min gap`
+  );
+  const [taskCategories, setTaskCategories] = useState([
+    'Document Review',
+    'Legal Research',
+    'Client Communication',
+    'Court Appearance',
+    'Drafting',
+    'Administrative'
+  ]);
+  const [requiredFields, setRequiredFields] = useState({
+    matter: true,
+    description: true,
+    taskCategory: false,
+    billingCode: false
+  });
+  const [saveStatus, setSaveStatus] = useState('All changes saved');
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([
     {
       id: '1',
@@ -516,6 +655,64 @@ const App: React.FC = () => {
 
   // Check if there are any confirmed entries to sync
   const hasConfirmedEntries = timeEntries.some(entry => entry.status === 'confirmed');
+
+  // Firm Settings helper functions
+  const handleDeleteCategory = (index: number) => {
+    setTaskCategories(categories => categories.filter((_, i) => i !== index));
+  };
+
+  const handleAddCategory = () => {
+    setTaskCategories(categories => [...categories, 'New Category']);
+  };
+
+  const handleCategoryChange = (index: number, value: string) => {
+    setTaskCategories(categories =>
+      categories.map((cat, i) => i === index ? value : cat)
+    );
+  };
+
+  const handleSaveAIInstructions = () => {
+    setSaveStatus('Saving...');
+    setTimeout(() => {
+      setSaveStatus('All changes saved');
+      setToastMessage('AI Instructions saved');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }, 500);
+  };
+
+  const handleViewHistory = () => {
+    alert('Version history coming soon');
+  };
+
+  const handleResetDefaults = () => {
+    if (confirm('Are you sure you want to reset all firm settings to defaults?')) {
+      setEntryPrefix('Review and analysis of...');
+      setAiInstructions(
+        `- Always categorize Westlaw/LexisNexis as Legal Research
+- Minimum billing increment: 6 minutes (0.1 hours)
+- Round up to nearest increment
+- Combine consecutive same-matter activities under 5 min gap`
+      );
+      setTaskCategories([
+        'Document Review',
+        'Legal Research',
+        'Client Communication',
+        'Court Appearance',
+        'Drafting',
+        'Administrative'
+      ]);
+      setRequiredFields({
+        matter: true,
+        description: true,
+        taskCategory: false,
+        billingCode: false
+      });
+      setToastMessage('Settings reset to defaults');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  };
 
   return (
     <div className={styles.app}>
@@ -926,61 +1123,262 @@ const App: React.FC = () => {
           )}
 
           {selectedTab === 'settings' && (
-            <div className={styles.section}>
-              <Subtitle2 style={{ marginBottom: '24px' }}>Settings</Subtitle2>
+            <div className={styles.settingsContainer}>
+              {/* Settings Sidebar with Vertical Tabs */}
+              <div className={styles.settingsSidebar}>
+                <Button
+                  appearance={selectedSettingsTab === 'general' ? 'primary' : 'subtle'}
+                  className={styles.settingsTabButton}
+                  onClick={() => setSelectedSettingsTab('general')}
+                >
+                  General
+                </Button>
+                <Button
+                  appearance={selectedSettingsTab === 'firm' ? 'primary' : 'subtle'}
+                  icon={<BuildingRegular />}
+                  className={styles.settingsTabButton}
+                  onClick={() => setSelectedSettingsTab('firm')}
+                >
+                  Firm Settings
+                </Button>
+                <Button
+                  appearance={selectedSettingsTab === 'interruptions' ? 'primary' : 'subtle'}
+                  className={styles.settingsTabButton}
+                  onClick={() => setSelectedSettingsTab('interruptions')}
+                >
+                  Interruptions
+                </Button>
+                <Button
+                  appearance={selectedSettingsTab === 'clio' ? 'primary' : 'subtle'}
+                  icon={<CloudCheckmarkRegular />}
+                  className={styles.settingsTabButton}
+                  onClick={() => setSelectedSettingsTab('clio')}
+                >
+                  Clio Integration
+                </Button>
+              </div>
 
-              {/* Clio Integration Section */}
-              <div className={styles.settingsSection}>
-                <div className={styles.settingsSectionHeader}>
-                  <CloudCheckmarkRegular fontSize={20} />
-                  <Body1Strong>Clio Integration</Body1Strong>
-                </div>
-
-                <Card className={styles.settingsCard}>
-                  {/* Connection Status */}
-                  <div className={styles.connectionStatus}>
-                    <div className={styles.statusDot}></div>
-                    <Body1Strong style={{ color: tokens.colorPaletteGreenForeground1 }}>
-                      Connected to Clio
-                    </Body1Strong>
+              {/* Settings Content */}
+              <div className={styles.settingsContent}>
+                {/* General Settings */}
+                {selectedSettingsTab === 'general' && (
+                  <div>
+                    <div className={styles.settingsContentHeader}>
+                      <Subtitle2>General Settings</Subtitle2>
+                      <Caption1 style={{ color: tokens.colorNeutralForeground3, marginTop: '8px' }}>
+                        Configure general application preferences
+                      </Caption1>
+                    </div>
+                    <Text>General settings options coming soon...</Text>
                   </div>
+                )}
 
-                  <Divider />
+                {/* Firm Settings */}
+                {selectedSettingsTab === 'firm' && (
+                  <div>
+                    <div className={styles.settingsContentHeader}>
+                      <Subtitle2>Firm Settings</Subtitle2>
+                      <Caption1 style={{ color: tokens.colorNeutralForeground3, marginTop: '8px' }}>
+                        Configure billing defaults and AI behavior for your firm
+                      </Caption1>
+                    </div>
 
-                  {/* Account Info */}
-                  <div className={styles.settingsRow}>
-                    <Text className={styles.settingsLabel}>ACCOUNT</Text>
-                    <Text className={styles.settingsValue}>Kenneth's Law Practice</Text>
+                    {/* 1. Billing Language Preferences */}
+                    <div className={styles.firmSettingsField}>
+                      <Label className={styles.firmSettingsLabel}>Default Entry Prefix</Label>
+                      <Textarea
+                        rows={3}
+                        placeholder="Review and analysis of..."
+                        value={entryPrefix}
+                        onChange={(e) => setEntryPrefix(e.target.value)}
+                      />
+                      <Text className={styles.firmSettingsHelper}>
+                        This language is prepended to auto-generated time entry descriptions
+                      </Text>
+                      <Text className={styles.characterCount}>
+                        {entryPrefix.length}/500 characters
+                      </Text>
+                    </div>
+
+                    <Divider style={{ margin: '32px 0' }} />
+
+                    {/* 2. AI Instructions */}
+                    <div className={styles.firmSettingsField}>
+                      <Label className={styles.firmSettingsLabel}>Custom AI Instructions</Label>
+                      <Textarea
+                        rows={5}
+                        value={aiInstructions}
+                        onChange={(e) => setAiInstructions(e.target.value)}
+                      />
+                      <div className={styles.versionInfo}>
+                        <Text>v3 · Last updated Jan 2, 2026</Text>
+                      </div>
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                        <Button
+                          appearance="primary"
+                          onClick={handleSaveAIInstructions}
+                        >
+                          Save Changes
+                        </Button>
+                        <Link onClick={handleViewHistory}>View History</Link>
+                      </div>
+                    </div>
+
+                    <Divider style={{ margin: '32px 0' }} />
+
+                    {/* 3. Default Task Categories */}
+                    <div className={styles.firmSettingsField}>
+                      <Label className={styles.firmSettingsLabel}>Task Categories</Label>
+                      <div className={styles.categoryList}>
+                        {taskCategories.map((category, index) => (
+                          <div key={index} className={styles.categoryItem}>
+                            <ReOrderDotsVerticalRegular className={styles.dragHandle} />
+                            <Input
+                              className={styles.categoryText}
+                              value={category}
+                              onChange={(e) => handleCategoryChange(index, e.target.value)}
+                              style={{ border: 'none', backgroundColor: 'transparent' }}
+                            />
+                            <Button
+                              appearance="subtle"
+                              icon={<DismissRegular />}
+                              className={styles.deleteButton}
+                              onClick={() => handleDeleteCategory(index)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        appearance="subtle"
+                        icon={<AddRegular />}
+                        onClick={handleAddCategory}
+                        style={{ marginTop: '12px' }}
+                      >
+                        Add Category
+                      </Button>
+                      <Text className={styles.firmSettingsHelper} style={{ marginTop: '12px' }}>
+                        These categories appear in time entry suggestions
+                      </Text>
+                    </div>
+
+                    <Divider style={{ margin: '32px 0' }} />
+
+                    {/* 4. Required Fields */}
+                    <div className={styles.firmSettingsField}>
+                      <Label className={styles.firmSettingsLabel}>Required Fields for Sync</Label>
+                      <div className={styles.checkboxList}>
+                        <Checkbox
+                          checked={requiredFields.matter}
+                          disabled
+                          label="Matter (always required)"
+                        />
+                        <Checkbox
+                          checked={requiredFields.description}
+                          onChange={(e, data) =>
+                            setRequiredFields({ ...requiredFields, description: data.checked === true })
+                          }
+                          label="Description"
+                        />
+                        <Checkbox
+                          checked={requiredFields.taskCategory}
+                          onChange={(e, data) =>
+                            setRequiredFields({ ...requiredFields, taskCategory: data.checked === true })
+                          }
+                          label="Task Category"
+                        />
+                        <Checkbox
+                          checked={requiredFields.billingCode}
+                          onChange={(e, data) =>
+                            setRequiredFields({ ...requiredFields, billingCode: data.checked === true })
+                          }
+                          label="Billing Code"
+                        />
+                      </div>
+                      <Text className={styles.firmSettingsHelper} style={{ marginTop: '12px' }}>
+                        Entries missing required fields cannot sync to Clio
+                      </Text>
+                    </div>
+
+                    {/* Footer */}
+                    <div className={styles.settingsFooter}>
+                      <Link onClick={handleResetDefaults}>Reset to Defaults</Link>
+                      <Text style={{ fontSize: '13px', color: tokens.colorNeutralForeground3 }}>
+                        {saveStatus}
+                      </Text>
+                    </div>
                   </div>
+                )}
 
-                  {/* Last Sync */}
-                  <div className={styles.settingsRow}>
-                    <Text className={styles.settingsLabel}>LAST SYNC</Text>
-                    <Text className={styles.settingsValue}>
-                      {lastSyncTime === 'Just now' ? 'Last synced: Just now' : `Last synced: ${lastSyncTime}`}
-                    </Text>
+                {/* Interruptions Settings */}
+                {selectedSettingsTab === 'interruptions' && (
+                  <div>
+                    <div className={styles.settingsContentHeader}>
+                      <Subtitle2>Interruption Settings</Subtitle2>
+                      <Caption1 style={{ color: tokens.colorNeutralForeground3, marginTop: '8px' }}>
+                        Manage how interruptions are tracked and categorized
+                      </Caption1>
+                    </div>
+                    <Text>Interruption settings coming soon...</Text>
                   </div>
+                )}
 
-                  <Divider />
+                {/* Clio Integration Settings */}
+                {selectedSettingsTab === 'clio' && (
+                  <div>
+                    <div className={styles.settingsContentHeader}>
+                      <Subtitle2>Clio Integration</Subtitle2>
+                      <Caption1 style={{ color: tokens.colorNeutralForeground3, marginTop: '8px' }}>
+                        Manage your Clio account connection and sync settings
+                      </Caption1>
+                    </div>
 
-                  {/* Action Buttons */}
-                  <div className={styles.settingsActions}>
-                    <Button
-                      appearance="primary"
-                      icon={isSyncing ? <Spinner size="tiny" /> : <ArrowSyncRegular />}
-                      disabled={isSyncing}
-                      onClick={handleManualSync}
-                    >
-                      {isSyncing ? 'Syncing...' : 'Sync Now'}
-                    </Button>
-                    <Button
-                      appearance="subtle"
-                      icon={<PlugDisconnectedRegular />}
-                    >
-                      Disconnect
-                    </Button>
+                    <Card className={styles.settingsCard}>
+                      {/* Connection Status */}
+                      <div className={styles.connectionStatus}>
+                        <div className={styles.statusDot}></div>
+                        <Body1Strong style={{ color: tokens.colorPaletteGreenForeground1 }}>
+                          Connected to Clio
+                        </Body1Strong>
+                      </div>
+
+                      <Divider />
+
+                      {/* Account Info */}
+                      <div className={styles.settingsRow}>
+                        <Text className={styles.settingsLabel}>ACCOUNT</Text>
+                        <Text className={styles.settingsValue}>Kenneth's Law Practice</Text>
+                      </div>
+
+                      {/* Last Sync */}
+                      <div className={styles.settingsRow}>
+                        <Text className={styles.settingsLabel}>LAST SYNC</Text>
+                        <Text className={styles.settingsValue}>
+                          {lastSyncTime === 'Just now' ? 'Last synced: Just now' : `Last synced: ${lastSyncTime}`}
+                        </Text>
+                      </div>
+
+                      <Divider />
+
+                      {/* Action Buttons */}
+                      <div className={styles.settingsActions}>
+                        <Button
+                          appearance="primary"
+                          icon={isSyncing ? <Spinner size="tiny" /> : <ArrowSyncRegular />}
+                          disabled={isSyncing}
+                          onClick={handleManualSync}
+                        >
+                          {isSyncing ? 'Syncing...' : 'Sync Now'}
+                        </Button>
+                        <Button
+                          appearance="subtle"
+                          icon={<PlugDisconnectedRegular />}
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
+                    </Card>
                   </div>
-                </Card>
+                )}
               </div>
             </div>
           )}
