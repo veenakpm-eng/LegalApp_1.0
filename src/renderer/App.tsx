@@ -11,16 +11,38 @@ import {
   Body1,
   Body1Strong,
   Caption1,
-  Subtitle2
+  Subtitle2,
+  Dropdown,
+  Option,
+  Badge
 } from '@fluentui/react-components';
 import {
   DocumentRegular,
   FolderRegular,
   ClockRegular,
   SettingsRegular,
-  SearchRegular
+  SearchRegular,
+  ClipboardTaskRegular,
+  CheckmarkCircleRegular,
+  EditRegular,
+  DeleteRegular
 } from '@fluentui/react-icons';
 import SuggestionPopup from './components/SuggestionPopup';
+
+type TimeEntryStatus = 'pending' | 'confirmed' | 'synced';
+
+interface TimeEntry {
+  id: string;
+  status: TimeEntryStatus;
+  caseName: string;
+  caseNumber: string;
+  taskType: string;
+  duration: string;
+  date: string;
+  dateGroup: 'Today' | 'Yesterday' | 'Earlier This Week';
+  description: string;
+  source: 'Auto-captured' | 'Manual entry';
+}
 
 const useStyles = makeStyles({
   app: {
@@ -167,12 +189,197 @@ const useStyles = makeStyles({
     fontSize: '12px',
     color: tokens.colorNeutralForeground3,
   },
+  timeEntriesHeader: {
+    marginBottom: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  timeEntriesHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('16px'),
+  },
+  dateGroup: {
+    marginBottom: '32px',
+  },
+  dateGroupHeader: {
+    marginBottom: '16px',
+    color: tokens.colorNeutralForeground2,
+    fontSize: '13px',
+    fontWeight: '600',
+  },
+  timeEntryCard: {
+    marginBottom: '12px',
+    ...shorthands.padding('16px'),
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('12px'),
+  },
+  timeEntryHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    ...shorthands.gap('12px'),
+  },
+  timeEntryContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('6px'),
+  },
+  timeEntryMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('12px'),
+    flexWrap: 'wrap',
+  },
+  timeEntryMetaItem: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('4px'),
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+  },
+  timeEntryDescription: {
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '1.5',
+  },
+  timeEntryActions: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+  },
+  timeEntrySource: {
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground4,
+    fontStyle: 'italic',
+  },
+  timeEntrySyncStatus: {
+    fontSize: '12px',
+    color: tokens.colorBrandForeground1,
+    fontWeight: '500',
+  },
 });
 
 const App: React.FC = () => {
   const styles = useStyles();
   const [selectedTab, setSelectedTab] = useState('documents');
   const [showSuggestionPopup, setShowSuggestionPopup] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('Pending Review');
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([
+    {
+      id: '1',
+      status: 'pending',
+      caseName: 'Johnson v. Tech Corp',
+      caseNumber: '2024-CV-1234',
+      taskType: 'Legal Research',
+      duration: '1h 15m',
+      date: 'Jan 3, 2026',
+      dateGroup: 'Today',
+      description: 'Research on employment law precedents and discovery motion requirements for ongoing litigation.',
+      source: 'Auto-captured'
+    },
+    {
+      id: '2',
+      status: 'pending',
+      caseName: 'Wilson Settlement Case',
+      caseNumber: '2024-CV-5678',
+      taskType: 'Client Communication',
+      duration: '22m',
+      date: 'Jan 3, 2026',
+      dateGroup: 'Today',
+      description: 'Email correspondence regarding settlement negotiations and client approval process.',
+      source: 'Auto-captured'
+    },
+    {
+      id: '3',
+      status: 'confirmed',
+      caseName: 'Acme Inc. Contract Review',
+      caseNumber: '2024-TX-9012',
+      taskType: 'Document Drafting',
+      duration: '52m',
+      date: 'Jan 2, 2026',
+      dateGroup: 'Yesterday',
+      description: 'Reviewed and revised client services agreement, focusing on liability limitations and termination clauses.',
+      source: 'Manual entry'
+    },
+    {
+      id: '4',
+      status: 'synced',
+      caseName: 'Smith Deposition Review',
+      caseNumber: '2024-CV-3456',
+      taskType: 'Document Review',
+      duration: '1h 8m',
+      date: 'Jan 2, 2026',
+      dateGroup: 'Yesterday',
+      description: 'Comprehensive review of deposition transcript, highlighting key testimony and inconsistencies.',
+      source: 'Auto-captured'
+    },
+    {
+      id: '5',
+      status: 'pending',
+      caseName: 'Anderson v. State',
+      caseNumber: '2024-CR-7890',
+      taskType: 'Legal Research',
+      duration: '57m',
+      date: 'Dec 30, 2025',
+      dateGroup: 'Earlier This Week',
+      description: 'Research on summary judgment standards and applicable case law for motion preparation.',
+      source: 'Auto-captured'
+    },
+    {
+      id: '6',
+      status: 'confirmed',
+      caseName: 'Estate of Thompson',
+      caseNumber: '2024-PR-2345',
+      taskType: 'Document Drafting',
+      duration: '2h 15m',
+      date: 'Dec 30, 2025',
+      dateGroup: 'Earlier This Week',
+      description: 'Drafted trust amendment documents and prepared supporting memorandum for client review.',
+      source: 'Manual entry'
+    }
+  ]);
+
+  // Helper functions for time entry interactions
+  const handleConfirm = (id: string) => {
+    setTimeEntries(entries =>
+      entries.map(entry =>
+        entry.id === id ? { ...entry, status: 'confirmed' as TimeEntryStatus } : entry
+      )
+    );
+  };
+
+  const handleEdit = (id: string) => {
+    alert(`Edit functionality for time entry ${id} - Not implemented in this demo`);
+  };
+
+  const handleDelete = (id: string) => {
+    setTimeEntries(entries => entries.filter(entry => entry.id !== id));
+  };
+
+  const handleSyncAll = () => {
+    setTimeEntries(entries =>
+      entries.map(entry =>
+        entry.status === 'confirmed' ? { ...entry, status: 'synced' as TimeEntryStatus } : entry
+      )
+    );
+  };
+
+  // Group time entries by date
+  const groupedEntries = timeEntries.reduce((groups, entry) => {
+    const group = entry.dateGroup;
+    if (!groups[group]) {
+      groups[group] = [];
+    }
+    groups[group].push(entry);
+    return groups;
+  }, {} as Record<string, TimeEntry[]>);
+
+  // Check if there are any confirmed entries to sync
+  const hasConfirmedEntries = timeEntries.some(entry => entry.status === 'confirmed');
 
   return (
     <div className={styles.app}>
@@ -215,6 +422,14 @@ const App: React.FC = () => {
             onClick={() => setSelectedTab('activity')}
           >
             Activity
+          </Button>
+          <Button
+            appearance={selectedTab === 'timeEntries' ? 'primary' : 'subtle'}
+            icon={<ClipboardTaskRegular />}
+            className={styles.sidebarButton}
+            onClick={() => setSelectedTab('timeEntries')}
+          >
+            Time Entries
           </Button>
           <Button
             appearance={selectedTab === 'cases' ? 'primary' : 'subtle'}
@@ -414,6 +629,139 @@ const App: React.FC = () => {
                 <Body1Strong>Case #2023-045</Body1Strong>
                 <Caption1>Status: Settlement Review • Pending client approval</Caption1>
               </Card>
+            </div>
+          )}
+
+          {selectedTab === 'timeEntries' && (
+            <div className={styles.section}>
+              {/* Time Entries Header */}
+              <div className={styles.timeEntriesHeader}>
+                <div className={styles.timeEntriesHeaderLeft}>
+                  <Subtitle2>Time Entries</Subtitle2>
+                  <Dropdown
+                    value={filterStatus}
+                    onOptionSelect={(_, data) => setFilterStatus(data.optionValue || 'Pending Review')}
+                    size="small"
+                  >
+                    <Option value="Pending Review">Pending Review</Option>
+                    <Option value="Confirmed">Confirmed</Option>
+                    <Option value="All Entries">All Entries</Option>
+                  </Dropdown>
+                </div>
+                <Button
+                  appearance="primary"
+                  size="small"
+                  disabled={!hasConfirmedEntries}
+                  onClick={handleSyncAll}
+                >
+                  Sync All Confirmed
+                </Button>
+              </div>
+
+              {/* Time Entry Groups */}
+              {['Today', 'Yesterday', 'Earlier This Week'].map((dateGroup) => {
+                const entries = groupedEntries[dateGroup] || [];
+                if (entries.length === 0) return null;
+
+                return (
+                  <div key={dateGroup} className={styles.dateGroup}>
+                    <div className={styles.dateGroupHeader}>{dateGroup}</div>
+
+                    {entries.map((entry) => {
+                      const statusBadge = entry.status === 'pending'
+                        ? { color: 'warning' as const, text: 'Pending' }
+                        : entry.status === 'confirmed'
+                        ? { color: 'success' as const, text: 'Confirmed' }
+                        : { color: 'informative' as const, text: 'Synced' };
+
+                      return (
+                        <Card key={entry.id} className={styles.timeEntryCard}>
+                          <div className={styles.timeEntryHeader}>
+                            <div className={styles.timeEntryContent}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <Badge appearance="filled" color={statusBadge.color} size="small">
+                                  {statusBadge.text}
+                                </Badge>
+                                {entry.status === 'synced' && (
+                                  <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                                )}
+                              </div>
+
+                              <Body1Strong>{entry.caseName}</Body1Strong>
+                              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+                                {entry.caseNumber}
+                              </Caption1>
+
+                              <div className={styles.timeEntryMeta}>
+                                <span className={styles.timeEntryMetaItem}>
+                                  <strong>{entry.taskType}</strong>
+                                </span>
+                                <span>•</span>
+                                <span className={styles.timeEntryMetaItem}>
+                                  {entry.duration}
+                                </span>
+                                <span>•</span>
+                                <span className={styles.timeEntryMetaItem}>
+                                  {entry.date}
+                                </span>
+                              </div>
+
+                              <Text className={styles.timeEntryDescription}>
+                                {entry.description}
+                              </Text>
+
+                              <Caption1 className={styles.timeEntrySource}>
+                                {entry.source}
+                              </Caption1>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons or Status */}
+                          <div className={styles.timeEntryActions}>
+                            {entry.status === 'pending' && (
+                              <>
+                                <Button
+                                  appearance="primary"
+                                  size="small"
+                                  onClick={() => handleConfirm(entry.id)}
+                                >
+                                  Confirm
+                                </Button>
+                                <Button
+                                  appearance="subtle"
+                                  size="small"
+                                  icon={<EditRegular />}
+                                  onClick={() => handleEdit(entry.id)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  appearance="subtle"
+                                  size="small"
+                                  icon={<DeleteRegular />}
+                                  onClick={() => handleDelete(entry.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            )}
+                            {entry.status === 'confirmed' && (
+                              <Text className={styles.timeEntrySyncStatus}>
+                                ✓ Ready to sync
+                              </Text>
+                            )}
+                            {entry.status === 'synced' && (
+                              <Text style={{ fontSize: '12px', color: tokens.colorPaletteGreenForeground1, fontWeight: '500' }}>
+                                ✓ Synced
+                              </Text>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
