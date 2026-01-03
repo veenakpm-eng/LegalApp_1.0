@@ -1,11 +1,30 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, screen } from 'electron';
 import * as path from 'path';
+import { Positioner } from 'electron-positioner';
 
 let mainWindow: BrowserWindow | null = null;
+let flyoutWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
+let isTrackingActive = true; // Track current state for menu updates
+let currentTooltip = 'LegalApp · Tracking · 0h 0m today';
 
-const createWindow = () => {
+/**
+ * Get the appropriate tray icon based on the current state
+ */
+const getTrayIcon = (state: 'active' | 'idle'): nativeImage => {
+  const iconName = state === 'active' ? 'tray-active.png' : 'tray-idle.png';
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'assets', iconName)
+    : path.join(__dirname, '../../assets', iconName);
+
+  return nativeImage.createFromPath(iconPath);
+};
+
+/**
+ * Create the main application window
+ */
+const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -15,13 +34,12 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
     },
-    icon: path.join(__dirname, '../../assets/icon.png')
+    icon: path.join(__dirname, '../../assets/icon.png'),
   });
 
   // Load the app
-  // In development, load from webpack dev server
   const isDev = !app.isPackaged;
 
   if (isDev) {
@@ -49,66 +67,262 @@ const createWindow = () => {
   });
 };
 
-const createTray = () => {
-  // Create a simple tray icon (will be replaced with actual icon)
-  const icon = nativeImage.createEmpty();
-  icon.addRepresentation({
-    width: 16,
-    height: 16,
-    buffer: Buffer.from([])
+/**
+ * Create the flyout window for quick status display
+ * This appears when clicking the tray icon
+ */
+const createFlyoutWindow = (): void => {
+  if (flyoutWindow) {
+    return;
+  }
+
+  flyoutWindow = new BrowserWindow({
+    width: 280,
+    height: 400,
+    show: false,
+    frame: false,
+    resizable: false,
+    skipTaskbar: true,
+    transparent: false,
+    backgroundColor: '#ffffff',
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
 
-  tray = new Tray(icon);
-  tray.setToolTip('LegalApp');
+  const isDev = !app.isPackaged;
+
+  if (isDev) {
+    flyoutWindow.loadURL('http://localhost:3000#/flyout');
+  } else {
+    flyoutWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+      hash: '/flyout',
+    });
+  }
+
+  // Hide when losing focus
+  flyoutWindow.on('blur', () => {
+    if (flyoutWindow && !flyoutWindow.webContents.isDevToolsOpened()) {
+      flyoutWindow.hide();
+    }
+  });
+
+  flyoutWindow.on('closed', () => {
+    flyoutWindow = null;
+  });
+};
+
+/**
+ * Position the flyout window relative to the tray icon
+ * Uses electron-positioner to handle taskbar position detection
+ */
+const positionFlyoutWindow = (): void => {
+  if (!flyoutWindow || !tray) return;
+
+  const trayBounds = tray.getBounds();
+  const windowBounds = flyoutWindow.getBounds();
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const workArea = primaryDisplay.workArea;
+
+  let x = 0;
+  let y = 0;
+
+  // Detect taskbar position based on tray bounds
+  const isBottom = trayBounds.y > workArea.height / 2;
+  const isTop = trayBounds.y < workArea.height / 2 && trayBounds.y < 100;
+  const isLeft = trayBounds.x < workArea.width / 2 && trayBounds.x < 100;
+  const isRight = trayBounds.x > workArea.width / 2;
+
+  if (isBottom) {
+    // Taskbar at bottom (most common on Windows)
+    x = Math.round(trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2);
+    y = Math.round(trayBounds.y - windowBounds.height - 10);
+  } else if (isTop) {
+    // Taskbar at top
+    x = Math.round(trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2);
+    y = Math.round(trayBounds.y + trayBounds.height + 10);
+  } else if (isLeft) {
+    // Taskbar at left
+    x = Math.round(trayBounds.x + trayBounds.width + 10);
+    y = Math.round(trayBounds.y + trayBounds.height / 2 - windowBounds.height / 2);
+  } else if (isRight) {
+    // Taskbar at right
+    x = Math.round(trayBounds.x - windowBounds.width - 10);
+    y = Math.round(trayBounds.y + trayBounds.height / 2 - windowBounds.height / 2);
+  }
+
+  // Ensure window stays within screen bounds
+  x = Math.max(workArea.x, Math.min(x, workArea.x + workArea.width - windowBounds.width));
+  y = Math.max(workArea.y, Math.min(y, workArea.y + workArea.height - windowBounds.height));
+
+  flyoutWindow.setPosition(x, y);
+};
+
+/**
+ * Toggle the flyout window visibility
+ */
+const toggleFlyout = (): void => {
+  if (!flyoutWindow) {
+    createFlyoutWindow();
+  }
+
+  if (flyoutWindow) {
+    if (flyoutWindow.isVisible()) {
+      flyoutWindow.hide();
+    } else {
+      positionFlyoutWindow();
+      flyoutWindow.show();
+      flyoutWindow.focus();
+    }
+  }
+};
+
+/**
+ * Update the tray context menu
+ * This rebuilds the menu to update the Pause/Resume toggle state
+ */
+const updateTrayMenu = (): void => {
+  if (!tray) return;
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Open LegalApp',
+      label: 'LegalApp',
+      enabled: false,
+    },
+    { type: 'separator' },
+    {
+      label: isTrackingActive ? 'Pause Tracking' : 'Resume Tracking',
+      click: () => {
+        isTrackingActive = !isTrackingActive;
+        updateTrayMenu();
+
+        // Update tray icon based on state
+        const newState = isTrackingActive ? 'active' : 'idle';
+        tray?.setImage(getTrayIcon(newState));
+
+        // Notify renderer process
+        if (mainWindow) {
+          mainWindow.webContents.send('tracking-state-changed', isTrackingActive);
+        }
+        if (flyoutWindow) {
+          flyoutWindow.webContents.send('tracking-state-changed', isTrackingActive);
+        }
+      },
+    },
+    {
+      label: 'Open Activity Feed',
       click: () => {
         if (mainWindow) {
           mainWindow.show();
           mainWindow.focus();
+          // Send message to navigate to Activity tab
+          mainWindow.webContents.send('navigate-to', 'activity');
         } else {
           createWindow();
         }
-      }
+      },
     },
-    { type: 'separator' },
     {
-      label: 'Settings',
+      label: 'Sync Now',
       click: () => {
-        // TODO: Open settings
-      }
+        // Trigger manual sync
+        if (mainWindow) {
+          mainWindow.webContents.send('trigger-sync');
+        }
+        if (flyoutWindow) {
+          flyoutWindow.webContents.send('trigger-sync');
+        }
+      },
     },
     { type: 'separator' },
     {
-      label: 'Quit',
+      label: 'Exit',
       click: () => {
         isQuitting = true;
         app.quit();
-      }
-    }
+      },
+    },
   ]);
 
   tray.setContextMenu(contextMenu);
+};
 
-  // Show window on tray click
+/**
+ * Create the system tray with persistent GUID
+ */
+const createTray = (): void => {
+  const icon = getTrayIcon('active');
+
+  // Use GUID for Windows persistence to maintain tray position
+  tray = new Tray(icon, 'legalapp-tray-guid');
+
+  // Set initial tooltip
+  tray.setToolTip(currentTooltip);
+
+  // Create context menu
+  updateTrayMenu();
+
+  // Left-click toggles flyout window
   tray.on('click', () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        mainWindow.hide();
-      } else {
-        mainWindow.show();
-        mainWindow.focus();
-      }
+    toggleFlyout();
+  });
+
+  // Right-click shows context menu (handled automatically by setContextMenu)
+};
+
+/**
+ * IPC Handlers for renderer communication
+ */
+const setupIPCHandlers = (): void => {
+  // Handle tray state changes from renderer
+  ipcMain.on('tray:set-state', (_event, state: 'active' | 'idle') => {
+    if (tray) {
+      tray.setImage(getTrayIcon(state));
+      isTrackingActive = state === 'active';
+      updateTrayMenu();
+    }
+  });
+
+  // Handle tooltip updates from renderer
+  ipcMain.on('tray:update-tooltip', (_event, text: string) => {
+    if (tray) {
+      currentTooltip = text;
+      tray.setToolTip(text);
+    }
+  });
+
+  // Window control handlers
+  ipcMain.on('window:close', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window === mainWindow) {
+      window?.hide();
     } else {
-      createWindow();
+      window?.close();
+    }
+  });
+
+  ipcMain.on('window:minimize', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    window?.minimize();
+  });
+
+  ipcMain.on('window:maximize', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window?.isMaximized()) {
+      window.unmaximize();
+    } else {
+      window?.maximize();
     }
   });
 };
 
-// App lifecycle
+/**
+ * App lifecycle events
+ */
 app.whenReady().then(() => {
+  setupIPCHandlers();
   createWindow();
   createTray();
 
@@ -121,8 +335,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   // Keep app running in system tray on Windows
-  if (process.platform !== 'darwin') {
-    // Don't quit, stay in tray
+  // Don't quit when all windows are closed - stay in tray
+  if (process.platform === 'darwin') {
+    app.quit();
   }
 });
 

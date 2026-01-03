@@ -1,7 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { FluentProvider, webLightTheme } from '@fluentui/react-components';
+import { FluentProvider } from '@fluentui/react-components';
 import App from './App';
+import { lightTheme, injectMaterialStyles } from './theme/legalAppTheme';
+
+// Inject Fluent material styles (mica, acrylic effects)
+injectMaterialStyles();
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -9,7 +13,7 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <FluentProvider theme={webLightTheme}>
+    <FluentProvider theme={lightTheme}>
       <App />
     </FluentProvider>
   </React.StrictMode>
