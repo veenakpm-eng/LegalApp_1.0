@@ -17,7 +17,14 @@ import {
   Badge,
   Divider,
   Tooltip,
-  Spinner
+  Spinner,
+  Radio,
+  RadioGroup,
+  Slider,
+  Switch,
+  Input,
+  Checkbox,
+  Label
 } from '@fluentui/react-components';
 import {
   DocumentRegular,
@@ -32,7 +39,11 @@ import {
   CloudCheckmarkRegular,
   ArrowSyncRegular,
   PlugDisconnectedRegular,
-  CheckmarkCircleFilled
+  CheckmarkCircleFilled,
+  AlertRegular,
+  PlayRegular,
+  PauseRegular,
+  BriefcaseRegular
 } from '@fluentui/react-icons';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
@@ -355,6 +366,77 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     ...shorthands.gap('4px'),
   },
+  settingsTabList: {
+    marginBottom: '24px',
+  },
+  helperText: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+    marginTop: '8px',
+    lineHeight: '1.4',
+  },
+  confidenceTable: {
+    width: '100%',
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    ...shorthands.border('1px', 'solid', tokens.colorNeutralStroke2),
+    marginBottom: '16px',
+    overflow: 'hidden',
+  },
+  confidenceRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 2fr',
+    ...shorthands.padding('12px', '16px'),
+    ...shorthands.borderBottom('1px', 'solid', tokens.colorNeutralStroke2),
+    '&:last-child': {
+      ...shorthands.border('none'),
+    },
+  },
+  confidenceHeader: {
+    backgroundColor: tokens.colorNeutralBackground3,
+    fontWeight: '600',
+    fontSize: '12px',
+    textTransform: 'uppercase',
+  },
+  sliderContainer: {
+    marginBottom: '20px',
+  },
+  sliderLabel: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '8px',
+    fontSize: '13px',
+  },
+  timePickerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    marginTop: '12px',
+    marginBottom: '12px',
+  },
+  dayCheckboxes: {
+    display: 'flex',
+    ...shorthands.gap('16px'),
+    marginTop: '12px',
+  },
+  pauseStatusBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+    marginBottom: '12px',
+  },
+  buttonRow: {
+    display: 'flex',
+    ...shorthands.gap('8px'),
+  },
+  formField: {
+    marginBottom: '24px',
+  },
+  fieldLabel: {
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: '600',
+    fontSize: '14px',
+  },
 });
 
 const App: React.FC = () => {
@@ -366,6 +448,21 @@ const App: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState('2 minutes ago');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Settings tab state
+  const [settingsTab, setSettingsTab] = useState('interruptions');
+
+  // Interruptions settings state
+  const [suggestionFrequency, setSuggestionFrequency] = useState('after-work-block');
+  const [highConfidenceThreshold, setHighConfidenceThreshold] = useState(80);
+  const [lowConfidenceThreshold, setLowConfidenceThreshold] = useState(50);
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
+  const [quietHoursFrom, setQuietHoursFrom] = useState('18:00');
+  const [quietHoursTo, setQuietHoursTo] = useState('08:00');
+  const [quietHoursWeekdays, setQuietHoursWeekdays] = useState(true);
+  const [quietHoursWeekends, setQuietHoursWeekends] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausedUntil, setPausedUntil] = useState<string | null>(null);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([
     {
       id: '1',
@@ -502,6 +599,42 @@ const App: React.FC = () => {
         setShowToast(false);
       }, 4000);
     }, 2000);
+  };
+
+  // Interruptions pause handlers
+  const handlePauseFor1Hour = () => {
+    const now = new Date();
+    const pauseUntil = new Date(now.getTime() + 60 * 60 * 1000);
+    setIsPaused(true);
+    setPausedUntil(pauseUntil.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+
+    // Show toast
+    setToastMessage('Suggestions paused for 1 hour');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
+
+  const handlePauseUntilTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(8, 0, 0, 0);
+    setIsPaused(true);
+    setPausedUntil('tomorrow 8:00 AM');
+
+    // Show toast
+    setToastMessage('Suggestions paused until tomorrow');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
+
+  const handleResume = () => {
+    setIsPaused(false);
+    setPausedUntil(null);
+
+    // Show toast
+    setToastMessage('Suggestions resumed');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
   };
 
   // Group time entries by date
@@ -929,59 +1062,274 @@ const App: React.FC = () => {
             <div className={styles.section}>
               <Subtitle2 style={{ marginBottom: '24px' }}>Settings</Subtitle2>
 
-              {/* Clio Integration Section */}
-              <div className={styles.settingsSection}>
-                <div className={styles.settingsSectionHeader}>
-                  <CloudCheckmarkRegular fontSize={20} />
-                  <Body1Strong>Clio Integration</Body1Strong>
+              {/* Settings Tabs */}
+              <TabList
+                selectedValue={settingsTab}
+                onTabSelect={(_, data) => setSettingsTab(data.value as string)}
+                className={styles.settingsTabList}
+              >
+                <Tab value="firm">Firm Settings</Tab>
+                <Tab value="interruptions">Interruptions</Tab>
+                <Tab value="clio">Clio Integration</Tab>
+              </TabList>
+
+              {/* Firm Settings Tab */}
+              {settingsTab === 'firm' && (
+                <div className={styles.settingsSection}>
+                  <div className={styles.settingsSectionHeader}>
+                    <BriefcaseRegular fontSize={20} />
+                    <Body1Strong>Firm Settings</Body1Strong>
+                  </div>
+
+                  <Card className={styles.settingsCard}>
+                    <Text>Firm settings will be configured here.</Text>
+                  </Card>
                 </div>
+              )}
 
-                <Card className={styles.settingsCard}>
-                  {/* Connection Status */}
-                  <div className={styles.connectionStatus}>
-                    <div className={styles.statusDot}></div>
-                    <Body1Strong style={{ color: tokens.colorPaletteGreenForeground1 }}>
-                      Connected to Clio
-                    </Body1Strong>
+              {/* Interruptions Tab */}
+              {settingsTab === 'interruptions' && (
+                <div className={styles.settingsSection}>
+                  <div className={styles.settingsSectionHeader}>
+                    <AlertRegular fontSize={20} />
+                    <Body1Strong>Interruptions</Body1Strong>
                   </div>
 
-                  <Divider />
+                  <Card className={styles.settingsCard}>
+                    {/* 1. Suggestion Frequency */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>When to show suggestions</Label>
+                      <RadioGroup
+                        value={suggestionFrequency}
+                        onChange={(_, data) => setSuggestionFrequency(data.value)}
+                      >
+                        <Radio value="after-work-block" label="After each work block ends" />
+                        <Radio value="batch-hourly" label="Batch suggestions every hour" />
+                        <Radio value="never" label="Never interrupt - Review Queue only" />
+                      </RadioGroup>
+                      <Text className={styles.helperText}>
+                        Work blocks are detected when you switch contexts or take a break
+                      </Text>
+                    </div>
 
-                  {/* Account Info */}
-                  <div className={styles.settingsRow}>
-                    <Text className={styles.settingsLabel}>ACCOUNT</Text>
-                    <Text className={styles.settingsValue}>Kenneth's Law Practice</Text>
+                    <Divider />
+
+                    {/* 2. Confidence Behavior */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>How to handle suggestions by confidence</Label>
+
+                      {/* Confidence Table */}
+                      <div className={styles.confidenceTable}>
+                        <div className={`${styles.confidenceRow} ${styles.confidenceHeader}`}>
+                          <Text>Confidence</Text>
+                          <Text>Threshold</Text>
+                          <Text>Behavior</Text>
+                        </div>
+                        <div className={styles.confidenceRow}>
+                          <Text>High</Text>
+                          <Text>&gt;80%</Text>
+                          <Text>Queue silently (no popup)</Text>
+                        </div>
+                        <div className={styles.confidenceRow}>
+                          <Text>Medium</Text>
+                          <Text>50-80%</Text>
+                          <Text>Show popup suggestion</Text>
+                        </div>
+                        <div className={styles.confidenceRow}>
+                          <Text>Low</Text>
+                          <Text>&lt;50%</Text>
+                          <Text>Skip - requires manual entry</Text>
+                        </div>
+                      </div>
+
+                      {/* Threshold Sliders */}
+                      <div className={styles.sliderContainer}>
+                        <div className={styles.sliderLabel}>
+                          <Text>High confidence threshold</Text>
+                          <Text style={{ fontWeight: '600' }}>{highConfidenceThreshold}%</Text>
+                        </div>
+                        <Slider
+                          min={60}
+                          max={95}
+                          value={highConfidenceThreshold}
+                          onChange={(_, data) => setHighConfidenceThreshold(data.value)}
+                        />
+                      </div>
+
+                      <div className={styles.sliderContainer}>
+                        <div className={styles.sliderLabel}>
+                          <Text>Low confidence threshold</Text>
+                          <Text style={{ fontWeight: '600' }}>{lowConfidenceThreshold}%</Text>
+                        </div>
+                        <Slider
+                          min={20}
+                          max={70}
+                          value={lowConfidenceThreshold}
+                          onChange={(_, data) => setLowConfidenceThreshold(data.value)}
+                        />
+                      </div>
+
+                      <Text className={styles.helperText}>
+                        Higher thresholds = fewer automatic entries, more popups
+                      </Text>
+                    </div>
+
+                    <Divider />
+
+                    {/* 3. Quiet Hours */}
+                    <div className={styles.formField}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        <Switch
+                          checked={quietHoursEnabled}
+                          onChange={(_, data) => setQuietHoursEnabled(data.checked)}
+                        />
+                        <Label className={styles.fieldLabel} style={{ marginBottom: '0' }}>Enable Quiet Hours</Label>
+                      </div>
+
+                      {quietHoursEnabled && (
+                        <>
+                          <div className={styles.timePickerRow}>
+                            <Text>From</Text>
+                            <Input
+                              type="time"
+                              value={quietHoursFrom}
+                              onChange={(_, data) => setQuietHoursFrom(data.value)}
+                              style={{ width: '120px' }}
+                            />
+                            <Text>to</Text>
+                            <Input
+                              type="time"
+                              value={quietHoursTo}
+                              onChange={(_, data) => setQuietHoursTo(data.value)}
+                              style={{ width: '120px' }}
+                            />
+                          </div>
+
+                          <div className={styles.dayCheckboxes}>
+                            <Checkbox
+                              label="Weekdays"
+                              checked={quietHoursWeekdays}
+                              onChange={(_, data) => setQuietHoursWeekdays(data.checked === true)}
+                            />
+                            <Checkbox
+                              label="Weekends"
+                              checked={quietHoursWeekends}
+                              onChange={(_, data) => setQuietHoursWeekends(data.checked === true)}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <Text className={styles.helperText}>
+                        During quiet hours, all suggestions go to Review Queue silently
+                      </Text>
+                    </div>
+
+                    <Divider />
+
+                    {/* 4. Quick Pause Controls */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Quick Actions</Label>
+
+                      {/* Status Badge */}
+                      <div className={styles.pauseStatusBadge}>
+                        <Badge
+                          appearance="filled"
+                          color={isPaused ? 'warning' : 'success'}
+                          size="medium"
+                          icon={isPaused ? <PauseRegular /> : <PlayRegular />}
+                        >
+                          {isPaused ? `Paused until ${pausedUntil}` : 'Suggestions: Active'}
+                        </Badge>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className={styles.buttonRow}>
+                        {!isPaused ? (
+                          <>
+                            <Button
+                              appearance="secondary"
+                              onClick={handlePauseFor1Hour}
+                            >
+                              Pause for 1 hour
+                            </Button>
+                            <Button
+                              appearance="secondary"
+                              onClick={handlePauseUntilTomorrow}
+                            >
+                              Pause until tomorrow
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            appearance="primary"
+                            icon={<PlayRegular />}
+                            onClick={handleResume}
+                          >
+                            Resume
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* Clio Integration Tab */}
+              {settingsTab === 'clio' && (
+                <div className={styles.settingsSection}>
+                  <div className={styles.settingsSectionHeader}>
+                    <CloudCheckmarkRegular fontSize={20} />
+                    <Body1Strong>Clio Integration</Body1Strong>
                   </div>
 
-                  {/* Last Sync */}
-                  <div className={styles.settingsRow}>
-                    <Text className={styles.settingsLabel}>LAST SYNC</Text>
-                    <Text className={styles.settingsValue}>
-                      {lastSyncTime === 'Just now' ? 'Last synced: Just now' : `Last synced: ${lastSyncTime}`}
-                    </Text>
-                  </div>
+                  <Card className={styles.settingsCard}>
+                    {/* Connection Status */}
+                    <div className={styles.connectionStatus}>
+                      <div className={styles.statusDot}></div>
+                      <Body1Strong style={{ color: tokens.colorPaletteGreenForeground1 }}>
+                        Connected to Clio
+                      </Body1Strong>
+                    </div>
 
-                  <Divider />
+                    <Divider />
 
-                  {/* Action Buttons */}
-                  <div className={styles.settingsActions}>
-                    <Button
-                      appearance="primary"
-                      icon={isSyncing ? <Spinner size="tiny" /> : <ArrowSyncRegular />}
-                      disabled={isSyncing}
-                      onClick={handleManualSync}
-                    >
-                      {isSyncing ? 'Syncing...' : 'Sync Now'}
-                    </Button>
-                    <Button
-                      appearance="subtle"
-                      icon={<PlugDisconnectedRegular />}
-                    >
-                      Disconnect
-                    </Button>
-                  </div>
-                </Card>
-              </div>
+                    {/* Account Info */}
+                    <div className={styles.settingsRow}>
+                      <Text className={styles.settingsLabel}>ACCOUNT</Text>
+                      <Text className={styles.settingsValue}>Kenneth's Law Practice</Text>
+                    </div>
+
+                    {/* Last Sync */}
+                    <div className={styles.settingsRow}>
+                      <Text className={styles.settingsLabel}>LAST SYNC</Text>
+                      <Text className={styles.settingsValue}>
+                        {lastSyncTime === 'Just now' ? 'Last synced: Just now' : `Last synced: ${lastSyncTime}`}
+                      </Text>
+                    </div>
+
+                    <Divider />
+
+                    {/* Action Buttons */}
+                    <div className={styles.settingsActions}>
+                      <Button
+                        appearance="primary"
+                        icon={isSyncing ? <Spinner size="tiny" /> : <ArrowSyncRegular />}
+                        disabled={isSyncing}
+                        onClick={handleManualSync}
+                      >
+                        {isSyncing ? 'Syncing...' : 'Sync Now'}
+                      </Button>
+                      <Button
+                        appearance="subtle"
+                        icon={<PlugDisconnectedRegular />}
+                      >
+                        Disconnect
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
             </div>
           )}
         </div>
