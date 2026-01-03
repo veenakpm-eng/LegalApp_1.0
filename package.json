@@ -5,8 +5,8 @@
   "main": "dist/main.js",
   "scripts": {
     "start": "concurrently \"npm run start:renderer\" \"npm run start:electron\"",
-    "start:renderer": "webpack serve --config webpack.renderer.config.js",
-    "start:electron": "wait-on http://localhost:3000 && electron .",
+    "start:renderer": "webpack serve --config webpack.renderer.config.js --mode development",
+    "start:electron": "wait-on http://localhost:3000 && electron . --no-sandbox",
     "build": "npm run build:renderer && npm run build:main",
     "build:renderer": "webpack --config webpack.renderer.config.js --mode production",
     "build:main": "webpack --config webpack.main.config.js --mode production",
