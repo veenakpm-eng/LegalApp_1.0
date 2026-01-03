@@ -24,7 +24,9 @@ import {
   Switch,
   Input,
   Checkbox,
-  Label
+  Label,
+  Textarea,
+  Link
 } from '@fluentui/react-components';
 import {
   DocumentRegular,
@@ -43,7 +45,11 @@ import {
   AlertRegular,
   PlayRegular,
   PauseRegular,
-  BriefcaseRegular
+  BriefcaseRegular,
+  AddRegular,
+  ReOrderDotsVerticalRegular,
+  DismissRegular,
+  HistoryRegular
 } from '@fluentui/react-icons';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
@@ -437,6 +443,75 @@ const useStyles = makeStyles({
     fontWeight: '600',
     fontSize: '14px',
   },
+  textarea: {
+    width: '100%',
+    fontFamily: 'Segoe UI, sans-serif',
+  },
+  characterCount: {
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground3,
+    marginTop: '4px',
+    textAlign: 'right',
+  },
+  versionInfo: {
+    fontSize: '11px',
+    color: tokens.colorNeutralForeground3,
+    marginTop: '8px',
+    marginBottom: '12px',
+  },
+  categoryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+    marginBottom: '12px',
+  },
+  categoryItem: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    ...shorthands.padding('8px', '12px'),
+    backgroundColor: tokens.colorNeutralBackground3,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    cursor: 'move',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3Hover,
+    },
+  },
+  dragHandle: {
+    color: tokens.colorNeutralForeground4,
+    cursor: 'grab',
+    ':active': {
+      cursor: 'grabbing',
+    },
+  },
+  categoryName: {
+    flex: 1,
+    fontSize: '14px',
+  },
+  deleteButton: {
+    minWidth: 'auto',
+    ...shorthands.padding('4px'),
+  },
+  checkboxList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('12px'),
+  },
+  settingsFooter: {
+    marginTop: '24px',
+    ...shorthands.padding('16px', '0'),
+    ...shorthands.borderTop('1px', 'solid', tokens.colorNeutralStroke2),
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  saveIndicator: {
+    fontSize: '12px',
+    color: tokens.colorPaletteGreenForeground1,
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+  },
 });
 
 const App: React.FC = () => {
@@ -451,6 +526,25 @@ const App: React.FC = () => {
 
   // Settings tab state
   const [settingsTab, setSettingsTab] = useState('interruptions');
+
+  // Firm Settings state
+  const [defaultEntryPrefix, setDefaultEntryPrefix] = useState('Review and analysis of...');
+  const [customAIInstructions, setCustomAIInstructions] = useState(`- Always categorize Westlaw/LexisNexis as Legal Research
+- Minimum billing increment: 6 minutes (0.1 hours)
+- Round up to nearest increment
+- Combine consecutive same-matter activities under 5 min gap`);
+  const [taskCategories, setTaskCategories] = useState([
+    { id: '1', name: 'Document Review' },
+    { id: '2', name: 'Legal Research' },
+    { id: '3', name: 'Client Communication' },
+    { id: '4', name: 'Court Appearance' },
+    { id: '5', name: 'Drafting' },
+    { id: '6', name: 'Administrative' }
+  ]);
+  const [requiredDescription, setRequiredDescription] = useState(true);
+  const [requiredTaskCategory, setRequiredTaskCategory] = useState(false);
+  const [requiredBillingCode, setRequiredBillingCode] = useState(false);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
 
   // Interruptions settings state
   const [suggestionFrequency, setSuggestionFrequency] = useState('after-work-block');
@@ -635,6 +729,84 @@ const App: React.FC = () => {
     setToastMessage('Suggestions resumed');
     setShowToast(true);
     setTimeout(() => setShowToast(false), 4000);
+  };
+
+  // Firm Settings handlers
+  const handleSaveAIInstructions = () => {
+    setToastMessage('AI Instructions saved successfully');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
+
+  const handleViewHistory = () => {
+    alert('Version history coming soon');
+  };
+
+  const handleAddCategory = () => {
+    const newCategory = {
+      id: String(Date.now()),
+      name: ''
+    };
+    setTaskCategories([...taskCategories, newCategory]);
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    setTaskCategories(taskCategories.filter(cat => cat.id !== id));
+  };
+
+  const handleCategoryNameChange = (id: string, newName: string) => {
+    setTaskCategories(taskCategories.map(cat =>
+      cat.id === id ? { ...cat, name: newName } : cat
+    ));
+  };
+
+  const handleDragStart = (id: string) => {
+    setDraggedItemId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!draggedItemId || draggedItemId === targetId) return;
+
+    const draggedIndex = taskCategories.findIndex(cat => cat.id === draggedItemId);
+    const targetIndex = taskCategories.findIndex(cat => cat.id === targetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newCategories = [...taskCategories];
+    const [draggedItem] = newCategories.splice(draggedIndex, 1);
+    newCategories.splice(targetIndex, 0, draggedItem);
+
+    setTaskCategories(newCategories);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemId(null);
+  };
+
+  const handleResetToDefaults = () => {
+    if (confirm('Are you sure you want to reset all firm settings to defaults? This action cannot be undone.')) {
+      setDefaultEntryPrefix('Review and analysis of...');
+      setCustomAIInstructions(`- Always categorize Westlaw/LexisNexis as Legal Research
+- Minimum billing increment: 6 minutes (0.1 hours)
+- Round up to nearest increment
+- Combine consecutive same-matter activities under 5 min gap`);
+      setTaskCategories([
+        { id: '1', name: 'Document Review' },
+        { id: '2', name: 'Legal Research' },
+        { id: '3', name: 'Client Communication' },
+        { id: '4', name: 'Court Appearance' },
+        { id: '5', name: 'Drafting' },
+        { id: '6', name: 'Administrative' }
+      ]);
+      setRequiredDescription(true);
+      setRequiredTaskCategory(false);
+      setRequiredBillingCode(false);
+
+      setToastMessage('Settings reset to defaults');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    }
   };
 
   // Group time entries by date
@@ -1068,10 +1240,51 @@ const App: React.FC = () => {
                 onTabSelect={(_, data) => setSettingsTab(data.value as string)}
                 className={styles.settingsTabList}
               >
+                <Tab value="general">General</Tab>
                 <Tab value="firm">Firm Settings</Tab>
                 <Tab value="interruptions">Interruptions</Tab>
                 <Tab value="clio">Clio Integration</Tab>
               </TabList>
+
+              {/* General Settings Tab */}
+              {settingsTab === 'general' && (
+                <div className={styles.settingsSection}>
+                  <div className={styles.settingsSectionHeader}>
+                    <SettingsRegular fontSize={20} />
+                    <Body1Strong>General</Body1Strong>
+                  </div>
+
+                  <Card className={styles.settingsCard}>
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Application Preferences</Label>
+                      <div className={styles.checkboxList}>
+                        <Checkbox
+                          label="Launch at startup"
+                          defaultChecked
+                        />
+                        <Checkbox
+                          label="Show notifications"
+                          defaultChecked
+                        />
+                        <Checkbox
+                          label="Minimize to system tray on close"
+                        />
+                      </div>
+                    </div>
+
+                    <Divider />
+
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Theme</Label>
+                      <RadioGroup defaultValue="light">
+                        <Radio value="light" label="Light" />
+                        <Radio value="dark" label="Dark" />
+                        <Radio value="system" label="Use system preference" />
+                      </RadioGroup>
+                    </div>
+                  </Card>
+                </div>
+              )}
 
               {/* Firm Settings Tab */}
               {settingsTab === 'firm' && (
@@ -1082,7 +1295,148 @@ const App: React.FC = () => {
                   </div>
 
                   <Card className={styles.settingsCard}>
-                    <Text>Firm settings will be configured here.</Text>
+                    {/* 1. Billing Language Preferences */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Default Entry Prefix</Label>
+                      <Textarea
+                        className={styles.textarea}
+                        value={defaultEntryPrefix}
+                        onChange={(_, data) => setDefaultEntryPrefix(data.value)}
+                        rows={3}
+                        placeholder="Review and analysis of..."
+                        resize="vertical"
+                      />
+                      <Text className={styles.helperText}>
+                        This language is prepended to auto-generated time entry descriptions
+                      </Text>
+                      <div className={styles.characterCount}>
+                        {defaultEntryPrefix.length}/500 characters
+                      </div>
+                    </div>
+
+                    <Divider />
+
+                    {/* 2. AI Instructions */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Custom AI Instructions</Label>
+                      <Textarea
+                        className={styles.textarea}
+                        value={customAIInstructions}
+                        onChange={(_, data) => setCustomAIInstructions(data.value)}
+                        rows={5}
+                        resize="vertical"
+                      />
+                      <div className={styles.versionInfo}>
+                        v3 · Last updated Jan 2, 2026
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <Button
+                          appearance="primary"
+                          size="small"
+                          onClick={handleSaveAIInstructions}
+                        >
+                          Save Changes
+                        </Button>
+                        <Link
+                          onClick={handleViewHistory}
+                          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                        >
+                          <HistoryRegular fontSize={14} style={{ marginRight: '4px' }} />
+                          View History
+                        </Link>
+                      </div>
+                    </div>
+
+                    <Divider />
+
+                    {/* 3. Default Task Categories */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Task Categories</Label>
+                      <div className={styles.categoryList}>
+                        {taskCategories.map((category) => (
+                          <div
+                            key={category.id}
+                            className={styles.categoryItem}
+                            draggable
+                            onDragStart={() => handleDragStart(category.id)}
+                            onDragOver={(e) => handleDragOver(e, category.id)}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <ReOrderDotsVerticalRegular
+                              className={styles.dragHandle}
+                              fontSize={16}
+                            />
+                            <Input
+                              className={styles.categoryName}
+                              value={category.name}
+                              onChange={(_, data) => handleCategoryNameChange(category.id, data.value)}
+                              placeholder="Category name"
+                            />
+                            <Button
+                              appearance="subtle"
+                              icon={<DismissRegular />}
+                              size="small"
+                              className={styles.deleteButton}
+                              onClick={() => handleDeleteCategory(category.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        appearance="secondary"
+                        icon={<AddRegular />}
+                        size="small"
+                        onClick={handleAddCategory}
+                      >
+                        Add Category
+                      </Button>
+                      <Text className={styles.helperText}>
+                        These categories appear in time entry suggestions
+                      </Text>
+                    </div>
+
+                    <Divider />
+
+                    {/* 4. Required Fields */}
+                    <div className={styles.formField}>
+                      <Label className={styles.fieldLabel}>Required Fields for Sync</Label>
+                      <div className={styles.checkboxList}>
+                        <Checkbox
+                          label="Matter"
+                          checked={true}
+                          disabled
+                        />
+                        <Checkbox
+                          label="Description"
+                          checked={requiredDescription}
+                          onChange={(_, data) => setRequiredDescription(data.checked === true)}
+                        />
+                        <Checkbox
+                          label="Task Category"
+                          checked={requiredTaskCategory}
+                          onChange={(_, data) => setRequiredTaskCategory(data.checked === true)}
+                        />
+                        <Checkbox
+                          label="Billing Code"
+                          checked={requiredBillingCode}
+                          onChange={(_, data) => setRequiredBillingCode(data.checked === true)}
+                        />
+                      </div>
+                      <Text className={styles.helperText}>
+                        Entries missing required fields cannot sync to Clio
+                      </Text>
+                    </div>
+
+                    {/* Footer */}
+                    <div className={styles.settingsFooter}>
+                      <Link onClick={handleResetToDefaults} style={{ cursor: 'pointer' }}>
+                        Reset to Defaults
+                      </Link>
+                      <div className={styles.saveIndicator}>
+                        <CheckmarkCircleRegular fontSize={14} />
+                        All changes saved
+                      </div>
+                    </div>
                   </Card>
                 </div>
               )}
