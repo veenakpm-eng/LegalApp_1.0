@@ -54,7 +54,7 @@ import {
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
 
-type TimeEntryStatus = 'pending' | 'confirmed' | 'synced';
+type TimeEntryStatus = 'pending' | 'confirmed' | 'synced' | 'failed';
 
 interface TimeEntry {
   id: string;
@@ -67,6 +67,7 @@ interface TimeEntry {
   dateGroup: 'Today' | 'Yesterday' | 'Earlier This Week';
   description: string;
   source: 'Auto-captured' | 'Manual entry';
+  error?: string;
 }
 
 const useStyles = makeStyles({
@@ -512,6 +513,73 @@ const useStyles = makeStyles({
     alignItems: 'center',
     ...shorthands.gap('6px'),
   },
+  fieldMappingTable: {
+    width: '100%',
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    ...shorthands.border('1px', 'solid', tokens.colorNeutralStroke2),
+    marginTop: '12px',
+    marginBottom: '12px',
+    overflow: 'hidden',
+  },
+  fieldMappingRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    ...shorthands.padding('10px', '16px'),
+    ...shorthands.borderBottom('1px', 'solid', tokens.colorNeutralStroke2),
+    '&:last-child': {
+      ...shorthands.border('none'),
+    },
+  },
+  fieldMappingHeader: {
+    backgroundColor: tokens.colorNeutralBackground3,
+    fontWeight: '600',
+    fontSize: '12px',
+  },
+  mappingHelperText: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+    fontSize: '12px',
+    color: tokens.colorPaletteGreenForeground1,
+    marginBottom: '8px',
+  },
+  syncHistorySection: {
+    marginTop: '20px',
+    marginBottom: '20px',
+  },
+  syncHistoryHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    cursor: 'pointer',
+    marginBottom: '12px',
+    ':hover': {
+      opacity: 0.8,
+    },
+  },
+  syncHistoryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+  },
+  syncHistoryItem: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    ...shorthands.padding('10px', '12px'),
+    backgroundColor: tokens.colorNeutralBackground3,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    fontSize: '13px',
+  },
+  syncHistoryItemClickable: {
+    cursor: 'pointer',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3Hover,
+    },
+  },
+  syncPreferencesSection: {
+    marginTop: '20px',
+  },
 });
 
 const App: React.FC = () => {
@@ -546,6 +614,12 @@ const App: React.FC = () => {
   const [requiredBillingCode, setRequiredBillingCode] = useState(false);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
 
+  // Clio Integration state
+  const [syncHistoryExpanded, setSyncHistoryExpanded] = useState(true);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [manualSyncOnly, setManualSyncOnly] = useState(false);
+  const [showSyncFailureNotifications, setShowSyncFailureNotifications] = useState(true);
+
   // Interruptions settings state
   const [suggestionFrequency, setSuggestionFrequency] = useState('after-work-block');
   const [highConfidenceThreshold, setHighConfidenceThreshold] = useState(80);
@@ -560,6 +634,19 @@ const App: React.FC = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([
     {
       id: '1',
+      status: 'failed',
+      caseName: 'ABC Corp Matter',
+      caseNumber: '2024-CV-9999',
+      taskType: 'Document Review',
+      duration: '45m',
+      date: 'Jan 3, 2026',
+      dateGroup: 'Today',
+      description: 'Reviewed corporate documents and compliance materials for ABC Corp transaction.',
+      source: 'Auto-captured',
+      error: "Clio error: Matter not found"
+    },
+    {
+      id: '2',
       status: 'pending',
       caseName: 'Johnson v. Tech Corp',
       caseNumber: '2024-CV-1234',
@@ -571,7 +658,7 @@ const App: React.FC = () => {
       source: 'Auto-captured'
     },
     {
-      id: '2',
+      id: '3',
       status: 'pending',
       caseName: 'Wilson Settlement Case',
       caseNumber: '2024-CV-5678',
@@ -583,7 +670,7 @@ const App: React.FC = () => {
       source: 'Auto-captured'
     },
     {
-      id: '3',
+      id: '4',
       status: 'confirmed',
       caseName: 'Acme Inc. Contract Review',
       caseNumber: '2024-TX-9012',
@@ -595,7 +682,7 @@ const App: React.FC = () => {
       source: 'Manual entry'
     },
     {
-      id: '4',
+      id: '5',
       status: 'synced',
       caseName: 'Smith Deposition Review',
       caseNumber: '2024-CV-3456',
@@ -607,7 +694,7 @@ const App: React.FC = () => {
       source: 'Auto-captured'
     },
     {
-      id: '5',
+      id: '6',
       status: 'pending',
       caseName: 'Anderson v. State',
       caseNumber: '2024-CR-7890',
@@ -619,7 +706,7 @@ const App: React.FC = () => {
       source: 'Auto-captured'
     },
     {
-      id: '6',
+      id: '7',
       status: 'confirmed',
       caseName: 'Estate of Thompson',
       caseNumber: '2024-PR-2345',
@@ -647,6 +734,18 @@ const App: React.FC = () => {
 
   const handleDelete = (id: string) => {
     setTimeEntries(entries => entries.filter(entry => entry.id !== id));
+  };
+
+  const handleRetry = (id: string) => {
+    // Simulate retry logic - set status to pending
+    setTimeEntries(entries =>
+      entries.map(entry =>
+        entry.id === id ? { ...entry, status: 'pending' as TimeEntryStatus, error: undefined } : entry
+      )
+    );
+    setToastMessage('Entry queued for retry');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
   };
 
   const handleSyncAll = () => {
@@ -1137,6 +1236,8 @@ const App: React.FC = () => {
                         ? { color: 'warning' as const, text: 'Pending' }
                         : entry.status === 'confirmed'
                         ? { color: 'success' as const, text: 'Confirmed' }
+                        : entry.status === 'failed'
+                        ? { color: 'danger' as const, text: 'Failed' }
                         : { color: 'informative' as const, text: 'Synced' };
 
                       return (
@@ -1144,11 +1245,24 @@ const App: React.FC = () => {
                           <div className={styles.timeEntryHeader}>
                             <div className={styles.timeEntryContent}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <Badge appearance="filled" color={statusBadge.color} size="small">
-                                  {statusBadge.text}
-                                </Badge>
-                                {entry.status === 'synced' && (
-                                  <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                                {entry.status === 'failed' ? (
+                                  <Tooltip content={entry.error || 'Sync failed'} relationship="label">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <Badge appearance="filled" color={statusBadge.color} size="small">
+                                        {statusBadge.text}
+                                      </Badge>
+                                      <AlertRegular fontSize={14} style={{ color: tokens.colorPaletteRedForeground1 }} />
+                                    </div>
+                                  </Tooltip>
+                                ) : (
+                                  <>
+                                    <Badge appearance="filled" color={statusBadge.color} size="small">
+                                      {statusBadge.text}
+                                    </Badge>
+                                    {entry.status === 'synced' && (
+                                      <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                                    )}
+                                  </>
                                 )}
                               </div>
 
@@ -1191,6 +1305,33 @@ const App: React.FC = () => {
                                   onClick={() => handleConfirm(entry.id)}
                                 >
                                   Confirm
+                                </Button>
+                                <Button
+                                  appearance="subtle"
+                                  size="small"
+                                  icon={<EditRegular />}
+                                  onClick={() => handleEdit(entry.id)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  appearance="subtle"
+                                  size="small"
+                                  icon={<DeleteRegular />}
+                                  onClick={() => handleDelete(entry.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            )}
+                            {entry.status === 'failed' && (
+                              <>
+                                <Button
+                                  appearance="primary"
+                                  size="small"
+                                  onClick={() => handleRetry(entry.id)}
+                                >
+                                  Retry
                                 </Button>
                                 <Button
                                   appearance="subtle"
@@ -1660,6 +1801,136 @@ const App: React.FC = () => {
                       <Text className={styles.settingsValue}>
                         {lastSyncTime === 'Just now' ? 'Last synced: Just now' : `Last synced: ${lastSyncTime}`}
                       </Text>
+                    </div>
+
+                    <Divider />
+
+                    {/* Field Mapping */}
+                    <div className={styles.settingsRow}>
+                      <Text className={styles.settingsLabel}>FIELD MAPPING</Text>
+                      <div className={styles.fieldMappingTable}>
+                        <div className={`${styles.fieldMappingRow} ${styles.fieldMappingHeader}`}>
+                          <Text>LegalApp Field</Text>
+                          <Text>Clio Field</Text>
+                        </div>
+                        <div className={styles.fieldMappingRow}>
+                          <Text>Matter</Text>
+                          <Text>Matter</Text>
+                        </div>
+                        <div className={styles.fieldMappingRow}>
+                          <Text>Duration</Text>
+                          <Text>Time</Text>
+                        </div>
+                        <div className={styles.fieldMappingRow}>
+                          <Text>Description</Text>
+                          <Text>Note</Text>
+                        </div>
+                        <div className={styles.fieldMappingRow}>
+                          <Text>Task Category</Text>
+                          <Text>Activity Code</Text>
+                        </div>
+                        <div className={styles.fieldMappingRow}>
+                          <Text>Date</Text>
+                          <Text>Entry Date</Text>
+                        </div>
+                      </div>
+                      <div className={styles.mappingHelperText}>
+                        <CheckmarkCircleRegular fontSize={14} />
+                        <Text>Mapping configured correctly</Text>
+                      </div>
+                      <Link
+                        onClick={() => alert('Custom mapping coming soon')}
+                        style={{ cursor: 'pointer', fontSize: '13px' }}
+                      >
+                        Edit Mapping
+                      </Link>
+                    </div>
+
+                    <Divider />
+
+                    {/* Sync History */}
+                    <div className={styles.syncHistorySection}>
+                      <div
+                        className={styles.syncHistoryHeader}
+                        onClick={() => setSyncHistoryExpanded(!syncHistoryExpanded)}
+                      >
+                        <Text className={styles.settingsLabel}>RECENT SYNC HISTORY</Text>
+                        <Text style={{ fontSize: '12px', color: tokens.colorNeutralForeground3 }}>
+                          {syncHistoryExpanded ? '▼' : '▶'}
+                        </Text>
+                      </div>
+                      {syncHistoryExpanded && (
+                        <>
+                          <div className={styles.syncHistoryList}>
+                            <div className={styles.syncHistoryItem}>
+                              <Text>Today 3:42 PM · 3 entries · </Text>
+                              <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                              <Text style={{ color: tokens.colorPaletteGreenForeground1 }}>Success</Text>
+                            </div>
+                            <div className={styles.syncHistoryItem}>
+                              <Text>Today 11:15 AM · 2 entries · </Text>
+                              <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                              <Text style={{ color: tokens.colorPaletteGreenForeground1 }}>Success</Text>
+                            </div>
+                            <div
+                              className={`${styles.syncHistoryItem} ${styles.syncHistoryItemClickable}`}
+                              onClick={() => alert("Clio error: Matter 'ABC Corp' not found in Clio")}
+                            >
+                              <Text>Yesterday 5:30 PM · 5 entries · </Text>
+                              <AlertRegular fontSize={14} style={{ color: tokens.colorPaletteYellowForeground1 }} />
+                              <Text style={{ color: tokens.colorPaletteYellowForeground1 }}>1 failed</Text>
+                            </div>
+                            <div className={styles.syncHistoryItem}>
+                              <Text>Yesterday 12:00 PM · 4 entries · </Text>
+                              <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                              <Text style={{ color: tokens.colorPaletteGreenForeground1 }}>Success</Text>
+                            </div>
+                            <div className={styles.syncHistoryItem}>
+                              <Text>Dec 31 · 6 entries · </Text>
+                              <CheckmarkCircleRegular fontSize={14} style={{ color: tokens.colorPaletteGreenForeground1 }} />
+                              <Text style={{ color: tokens.colorPaletteGreenForeground1 }}>Success</Text>
+                            </div>
+                          </div>
+                          <Link
+                            onClick={() => alert('Full sync history coming soon')}
+                            style={{ cursor: 'pointer', fontSize: '13px', marginTop: '12px', display: 'inline-block' }}
+                          >
+                            View Full History
+                          </Link>
+                        </>
+                      )}
+                    </div>
+
+                    <Divider />
+
+                    {/* Sync Preferences */}
+                    <div className={styles.syncPreferencesSection}>
+                      <Text className={styles.settingsLabel} style={{ marginBottom: '12px', display: 'block' }}>
+                        SYNC PREFERENCES
+                      </Text>
+                      <div className={styles.checkboxList}>
+                        <Checkbox
+                          label="Auto-sync confirmed entries every hour"
+                          checked={autoSyncEnabled}
+                          onChange={(_, data) => {
+                            setAutoSyncEnabled(data.checked === true);
+                            if (data.checked) setManualSyncOnly(false);
+                          }}
+                        />
+                        <Checkbox
+                          label="Require manual sync only"
+                          checked={manualSyncOnly}
+                          onChange={(_, data) => {
+                            setManualSyncOnly(data.checked === true);
+                            if (data.checked) setAutoSyncEnabled(false);
+                          }}
+                        />
+                        <Checkbox
+                          label="Show notification on sync failure"
+                          checked={showSyncFailureNotifications}
+                          onChange={(_, data) => setShowSyncFailureNotifications(data.checked === true)}
+                        />
+                      </div>
                     </div>
 
                     <Divider />
