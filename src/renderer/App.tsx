@@ -585,7 +585,7 @@ const useStyles = makeStyles({
 const App: React.FC = () => {
   const styles = useStyles();
   const [selectedTab, setSelectedTab] = useState('documents');
-  const [showSuggestionPopup, setShowSuggestionPopup] = useState(false);
+  const [suggestionPopupMode, setSuggestionPopupMode] = useState<'hidden' | 'high' | 'low'>('hidden');
   const [filterStatus, setFilterStatus] = useState('Pending Review');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('2 minutes ago');
@@ -734,6 +734,15 @@ const App: React.FC = () => {
 
   const handleDelete = (id: string) => {
     setTimeEntries(entries => entries.filter(entry => entry.id !== id));
+  };
+
+  // Helper function to cycle through suggestion popup modes
+  const cycleSuggestionPopup = () => {
+    setSuggestionPopupMode(current => {
+      if (current === 'hidden') return 'high';
+      if (current === 'high') return 'low';
+      return 'hidden';
+    });
   };
 
   const handleRetry = (id: string) => {
@@ -1036,9 +1045,9 @@ const App: React.FC = () => {
                 <Button
                   appearance="subtle"
                   size="small"
-                  onClick={() => setShowSuggestionPopup(!showSuggestionPopup)}
+                  onClick={cycleSuggestionPopup}
                 >
-                  Demo Suggestion
+                  Demo Suggestion {suggestionPopupMode !== 'hidden' && `(${suggestionPopupMode === 'high' ? 'High' : 'Low'})`}
                 </Button>
               </div>
 
@@ -1975,8 +1984,9 @@ const App: React.FC = () => {
 
       {/* Suggestion Popup */}
       <SuggestionPopup
-        visible={showSuggestionPopup}
-        onClose={() => setShowSuggestionPopup(false)}
+        visible={suggestionPopupMode !== 'hidden'}
+        onClose={() => setSuggestionPopupMode('hidden')}
+        confidenceLevel={suggestionPopupMode === 'low' ? 'low' : 'high'}
       />
 
       {/* Tray Demo Panel */}
