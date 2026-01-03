@@ -14,7 +14,10 @@ import {
   Subtitle2,
   Dropdown,
   Option,
-  Badge
+  Badge,
+  Divider,
+  Tooltip,
+  Spinner
 } from '@fluentui/react-components';
 import {
   DocumentRegular,
@@ -25,7 +28,11 @@ import {
   ClipboardTaskRegular,
   CheckmarkCircleRegular,
   EditRegular,
-  DeleteRegular
+  DeleteRegular,
+  CloudCheckmarkRegular,
+  ArrowSyncRegular,
+  PlugDisconnectedRegular,
+  CheckmarkCircleFilled
 } from '@fluentui/react-icons';
 import SuggestionPopup from './components/SuggestionPopup';
 
@@ -261,6 +268,92 @@ const useStyles = makeStyles({
     color: tokens.colorBrandForeground1,
     fontWeight: '500',
   },
+  syncStatusIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+    ...shorthands.padding('6px', '12px'),
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    backgroundColor: tokens.colorNeutralBackground3,
+    cursor: 'pointer',
+    ':hover': {
+      backgroundColor: tokens.colorNeutralBackground3Hover,
+    },
+  },
+  syncStatusIcon: {
+    color: tokens.colorPaletteGreenForeground1,
+  },
+  settingsSection: {
+    marginBottom: '32px',
+  },
+  settingsSectionHeader: {
+    marginBottom: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+  },
+  settingsCard: {
+    ...shorthands.padding('20px'),
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('16px'),
+  },
+  connectionStatus: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    marginBottom: '8px',
+  },
+  statusDot: {
+    width: '8px',
+    height: '8px',
+    ...shorthands.borderRadius('50%'),
+    backgroundColor: tokens.colorPaletteGreenForeground1,
+  },
+  settingsRow: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('4px'),
+  },
+  settingsLabel: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+    fontWeight: '600',
+  },
+  settingsValue: {
+    fontSize: '14px',
+    color: tokens.colorNeutralForeground1,
+  },
+  settingsActions: {
+    display: 'flex',
+    ...shorthands.gap('8px'),
+    marginTop: '8px',
+  },
+  toast: {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    minWidth: '320px',
+    ...shorthands.padding('16px'),
+    backgroundColor: tokens.colorNeutralBackground1,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    boxShadow: tokens.shadow16,
+    ...shorthands.border('1px', 'solid', tokens.colorNeutralStroke1),
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('12px'),
+    zIndex: 1000,
+  },
+  toastIcon: {
+    color: tokens.colorPaletteGreenForeground1,
+    fontSize: '20px',
+  },
+  toastContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('4px'),
+  },
 });
 
 const App: React.FC = () => {
@@ -268,6 +361,10 @@ const App: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('documents');
   const [showSuggestionPopup, setShowSuggestionPopup] = useState(false);
   const [filterStatus, setFilterStatus] = useState('Pending Review');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState('2 minutes ago');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([
     {
       id: '1',
@@ -361,11 +458,49 @@ const App: React.FC = () => {
   };
 
   const handleSyncAll = () => {
-    setTimeEntries(entries =>
-      entries.map(entry =>
-        entry.status === 'confirmed' ? { ...entry, status: 'synced' as TimeEntryStatus } : entry
-      )
-    );
+    setIsSyncing(true);
+
+    // Count how many entries will be synced
+    const confirmedCount = timeEntries.filter(entry => entry.status === 'confirmed').length;
+
+    // Simulate network delay
+    setTimeout(() => {
+      setTimeEntries(entries =>
+        entries.map(entry =>
+          entry.status === 'confirmed' ? { ...entry, status: 'synced' as TimeEntryStatus } : entry
+        )
+      );
+      setIsSyncing(false);
+      setLastSyncTime('Just now');
+
+      // Show success toast
+      setToastMessage(`${confirmedCount} ${confirmedCount === 1 ? 'entry' : 'entries'} synced to Clio`);
+      setShowToast(true);
+
+      // Hide toast after 4 seconds
+      setTimeout(() => {
+        setShowToast(false);
+      }, 4000);
+    }, 2000);
+  };
+
+  const handleManualSync = () => {
+    setIsSyncing(true);
+
+    // Simulate network delay
+    setTimeout(() => {
+      setIsSyncing(false);
+      setLastSyncTime('Just now');
+
+      // Show success toast
+      setToastMessage('Synced with Clio');
+      setShowToast(true);
+
+      // Hide toast after 4 seconds
+      setTimeout(() => {
+        setShowToast(false);
+      }, 4000);
+    }, 2000);
   };
 
   // Group time entries by date
@@ -398,7 +533,22 @@ const App: React.FC = () => {
             placeholder="Search documents, cases, contacts..."
           />
         </div>
-        <Button appearance="subtle" icon={<SettingsRegular />}>
+
+        {/* Clio Sync Status Indicator */}
+        <Tooltip
+          content={`Clio: Connected · Last sync ${lastSyncTime}`}
+          relationship="label"
+        >
+          <div className={styles.syncStatusIndicator} onClick={() => setSelectedTab('settings')}>
+            <CloudCheckmarkRegular fontSize={16} className={styles.syncStatusIcon} />
+          </div>
+        </Tooltip>
+
+        <Button
+          appearance="subtle"
+          icon={<SettingsRegular />}
+          onClick={() => setSelectedTab('settings')}
+        >
           Settings
         </Button>
       </div>
@@ -438,6 +588,14 @@ const App: React.FC = () => {
             onClick={() => setSelectedTab('cases')}
           >
             Cases
+          </Button>
+          <Button
+            appearance={selectedTab === 'settings' ? 'primary' : 'subtle'}
+            icon={<SettingsRegular />}
+            className={styles.sidebarButton}
+            onClick={() => setSelectedTab('settings')}
+          >
+            Settings
           </Button>
         </div>
 
@@ -651,10 +809,11 @@ const App: React.FC = () => {
                 <Button
                   appearance="primary"
                   size="small"
-                  disabled={!hasConfirmedEntries}
+                  disabled={!hasConfirmedEntries || isSyncing}
                   onClick={handleSyncAll}
+                  icon={isSyncing ? <Spinner size="tiny" /> : undefined}
                 >
-                  Sync All Confirmed
+                  {isSyncing ? 'Syncing...' : 'Sync All Confirmed'}
                 </Button>
               </div>
 
@@ -764,8 +923,81 @@ const App: React.FC = () => {
               })}
             </div>
           )}
+
+          {selectedTab === 'settings' && (
+            <div className={styles.section}>
+              <Subtitle2 style={{ marginBottom: '24px' }}>Settings</Subtitle2>
+
+              {/* Clio Integration Section */}
+              <div className={styles.settingsSection}>
+                <div className={styles.settingsSectionHeader}>
+                  <CloudCheckmarkRegular fontSize={20} />
+                  <Body1Strong>Clio Integration</Body1Strong>
+                </div>
+
+                <Card className={styles.settingsCard}>
+                  {/* Connection Status */}
+                  <div className={styles.connectionStatus}>
+                    <div className={styles.statusDot}></div>
+                    <Body1Strong style={{ color: tokens.colorPaletteGreenForeground1 }}>
+                      Connected to Clio
+                    </Body1Strong>
+                  </div>
+
+                  <Divider />
+
+                  {/* Account Info */}
+                  <div className={styles.settingsRow}>
+                    <Text className={styles.settingsLabel}>ACCOUNT</Text>
+                    <Text className={styles.settingsValue}>Kenneth's Law Practice</Text>
+                  </div>
+
+                  {/* Last Sync */}
+                  <div className={styles.settingsRow}>
+                    <Text className={styles.settingsLabel}>LAST SYNC</Text>
+                    <Text className={styles.settingsValue}>
+                      {lastSyncTime === 'Just now' ? 'Last synced: Just now' : `Last synced: ${lastSyncTime}`}
+                    </Text>
+                  </div>
+
+                  <Divider />
+
+                  {/* Action Buttons */}
+                  <div className={styles.settingsActions}>
+                    <Button
+                      appearance="primary"
+                      icon={isSyncing ? <Spinner size="tiny" /> : <ArrowSyncRegular />}
+                      disabled={isSyncing}
+                      onClick={handleManualSync}
+                    >
+                      {isSyncing ? 'Syncing...' : 'Sync Now'}
+                    </Button>
+                    <Button
+                      appearance="subtle"
+                      icon={<PlugDisconnectedRegular />}
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className={styles.toast}>
+          <CheckmarkCircleFilled className={styles.toastIcon} />
+          <div className={styles.toastContent}>
+            <Body1Strong>{toastMessage}</Body1Strong>
+            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+              Clio sync completed successfully
+            </Caption1>
+          </div>
+        </div>
+      )}
 
       {/* Suggestion Popup */}
       <SuggestionPopup
