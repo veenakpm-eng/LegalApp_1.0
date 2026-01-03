@@ -70,6 +70,22 @@ interface TimeEntry {
   error?: string;
 }
 
+type ActivityStatus = 'Pending' | 'Confirmed' | 'Synced';
+
+interface ActivityItem {
+  id: string;
+  appName: string;
+  appIcon: string;
+  appColor: string;
+  windowTitle: string;
+  duration: string;
+  timeRange: string;
+  timeBlock: 'Morning' | 'Afternoon';
+  status: ActivityStatus;
+  caseNumber?: string;
+  caseName?: string;
+}
+
 const useStyles = makeStyles({
   app: {
     display: 'flex',
@@ -214,6 +230,37 @@ const useStyles = makeStyles({
   activityTime: {
     fontSize: '12px',
     color: tokens.colorNeutralForeground3,
+  },
+  activityStatusBadge: {
+    marginLeft: '8px',
+  },
+  caseAssociation: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground3,
+    marginTop: '4px',
+  },
+  caseLink: {
+    fontSize: '12px',
+    color: tokens.colorBrandForeground1,
+    cursor: 'pointer',
+    textDecoration: 'none',
+    ':hover': {
+      textDecoration: 'underline',
+    },
+  },
+  unassignedCase: {
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground4,
+    fontStyle: 'italic',
+  },
+  caseGroupHeader: {
+    marginBottom: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+    ...shorthands.padding('12px', '16px'),
+    backgroundColor: tokens.colorNeutralBackground3,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
   },
   timeEntriesHeader: {
     marginBottom: '24px',
@@ -587,6 +634,7 @@ const App: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('documents');
   const [suggestionPopupMode, setSuggestionPopupMode] = useState<'hidden' | 'high' | 'low'>('hidden');
   const [filterStatus, setFilterStatus] = useState('Pending Review');
+  const [activityFilter, setActivityFilter] = useState<'All Activity' | 'By Case' | 'Pending Review'>('All Activity');
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('2 minutes ago');
   const [showToast, setShowToast] = useState(false);
@@ -631,6 +679,111 @@ const App: React.FC = () => {
   const [quietHoursWeekends, setQuietHoursWeekends] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [pausedUntil, setPausedUntil] = useState<string | null>(null);
+
+  // Activity Feed data
+  const [activityItems] = useState<ActivityItem[]>([
+    {
+      id: 'a1',
+      appName: 'Microsoft Word',
+      appIcon: 'W',
+      appColor: '#0078D4',
+      windowTitle: 'Motion to Compel Discovery - Johnson v. Tech Corp.docx',
+      duration: '1h 15m',
+      timeRange: '8:30 AM - 9:45 AM',
+      timeBlock: 'Morning',
+      status: 'Pending',
+      caseNumber: '#2024-001',
+      caseName: 'Johnson v. Tech Corp',
+    },
+    {
+      id: 'a2',
+      appName: 'Outlook',
+      appIcon: 'O',
+      appColor: '#0072C6',
+      windowTitle: 'Email: Re: Settlement Negotiations - Wilson Case',
+      duration: '22m',
+      timeRange: '9:45 AM - 10:07 AM',
+      timeBlock: 'Morning',
+      status: 'Confirmed',
+      caseNumber: '#2024-002',
+      caseName: 'Wilson Settlement Case',
+    },
+    {
+      id: 'a3',
+      appName: 'Chrome',
+      appIcon: 'C',
+      appColor: '#EA4335',
+      windowTitle: 'Legal Research - westlaw.com - Employment Law Precedents',
+      duration: '45m',
+      timeRange: '10:15 AM - 11:00 AM',
+      timeBlock: 'Morning',
+      status: 'Pending',
+      caseNumber: '#2024-001',
+      caseName: 'Johnson v. Tech Corp',
+    },
+    {
+      id: 'a4',
+      appName: 'Microsoft Word',
+      appIcon: 'W',
+      appColor: '#0078D4',
+      windowTitle: 'Contract Review - Client Services Agreement - Acme Inc.docx',
+      duration: '52m',
+      timeRange: '11:10 AM - 12:02 PM',
+      timeBlock: 'Morning',
+      status: 'Synced',
+      caseNumber: '#2024-003',
+      caseName: 'Acme Inc. Contract Review',
+    },
+    {
+      id: 'a5',
+      appName: 'Adobe Acrobat',
+      appIcon: 'A',
+      appColor: '#DC3E15',
+      windowTitle: 'Reviewing Deposition Transcript - Smith Deposition.pdf',
+      duration: '1h 8m',
+      timeRange: '1:15 PM - 2:23 PM',
+      timeBlock: 'Afternoon',
+      status: 'Confirmed',
+      caseNumber: '#2024-004',
+      caseName: 'Smith Deposition Review',
+    },
+    {
+      id: 'a6',
+      appName: 'Chrome',
+      appIcon: 'C',
+      appColor: '#EA4335',
+      windowTitle: 'Case Management - clio.com - Time Entry & Billing',
+      duration: '18m',
+      timeRange: '2:30 PM - 2:48 PM',
+      timeBlock: 'Afternoon',
+      status: 'Pending',
+    },
+    {
+      id: 'a7',
+      appName: 'Outlook',
+      appIcon: 'O',
+      appColor: '#0072C6',
+      windowTitle: 'Email: Client Communication - Case Status Update',
+      duration: '15m',
+      timeRange: '3:00 PM - 3:15 PM',
+      timeBlock: 'Afternoon',
+      status: 'Confirmed',
+      caseNumber: '#2024-002',
+      caseName: 'Wilson Settlement Case',
+    },
+    {
+      id: 'a8',
+      appName: 'Microsoft Word',
+      appIcon: 'W',
+      appColor: '#0078D4',
+      windowTitle: 'Legal Brief - Summary Judgment Motion - Anderson v. State.docx',
+      duration: '57m',
+      timeRange: '3:30 PM - 4:27 PM',
+      timeBlock: 'Afternoon',
+      status: 'Pending',
+    },
+  ]);
+
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([
     {
       id: '1',
@@ -1041,6 +1194,15 @@ const App: React.FC = () => {
               {/* Activity Header */}
               <div className={styles.activityHeader}>
                 <Subtitle2>Today's Activity</Subtitle2>
+                <Dropdown
+                  value={activityFilter}
+                  onOptionSelect={(_, data) => setActivityFilter(data.optionValue as 'All Activity' | 'By Case' | 'Pending Review')}
+                  size="small"
+                >
+                  <Option value="All Activity">All Activity</Option>
+                  <Option value="By Case">By Case</Option>
+                  <Option value="Pending Review">Pending Review</Option>
+                </Dropdown>
                 <Text className={styles.totalTime}>5h 32m tracked</Text>
                 <Button
                   appearance="subtle"
@@ -1051,135 +1213,209 @@ const App: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Morning Time Block */}
-              <div className={styles.timeBlock}>
-                <div className={styles.timeBlockHeader}>Morning</div>
+              {/* Filter and display activity items */}
+              {(() => {
+                // Apply filtering
+                let filteredItems = activityItems;
+                if (activityFilter === 'Pending Review') {
+                  filteredItems = activityItems.filter(item => item.status === 'Pending');
+                }
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#0078D4' }}>
-                    W
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Microsoft Word</Body1Strong>
-                    <Body1>Motion to Compel Discovery - Johnson v. Tech Corp.docx</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>1h 15m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>8:30 AM - 9:45 AM</span>
-                    </div>
-                  </div>
-                </Card>
+                // Render by filter type
+                if (activityFilter === 'By Case') {
+                  // Group by case
+                  const caseGroups: Record<string, ActivityItem[]> = {};
+                  const unassigned: ActivityItem[] = [];
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#0072C6' }}>
-                    O
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Outlook</Body1Strong>
-                    <Body1>Email: Re: Settlement Negotiations - Wilson Case</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>22m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>9:45 AM - 10:07 AM</span>
-                    </div>
-                  </div>
-                </Card>
+                  filteredItems.forEach(item => {
+                    if (item.caseNumber && item.caseName) {
+                      const key = `${item.caseNumber}-${item.caseName}`;
+                      if (!caseGroups[key]) {
+                        caseGroups[key] = [];
+                      }
+                      caseGroups[key].push(item);
+                    } else {
+                      unassigned.push(item);
+                    }
+                  });
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#EA4335' }}>
-                    C
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Chrome</Body1Strong>
-                    <Body1>Legal Research - westlaw.com - Employment Law Precedents</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>45m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>10:15 AM - 11:00 AM</span>
-                    </div>
-                  </div>
-                </Card>
+                  return (
+                    <>
+                      {Object.entries(caseGroups).map(([key, items]) => {
+                        const firstItem = items[0];
+                        return (
+                          <div key={key} className={styles.timeBlock}>
+                            <div className={styles.caseGroupHeader}>
+                              <FolderRegular fontSize={16} />
+                              <Body1Strong>{firstItem.caseName}</Body1Strong>
+                              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+                                {firstItem.caseNumber}
+                              </Caption1>
+                            </div>
+                            {items.map(item => {
+                              const statusBadge = item.status === 'Pending'
+                                ? { color: 'warning' as const, text: 'Pending' }
+                                : item.status === 'Confirmed'
+                                ? { color: 'success' as const, text: 'Confirmed' }
+                                : { color: 'informative' as const, text: 'Synced' };
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#0078D4' }}>
-                    W
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Microsoft Word</Body1Strong>
-                    <Body1>Contract Review - Client Services Agreement - Acme Inc.docx</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>52m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>11:10 AM - 12:02 PM</span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
+                              return (
+                                <Card key={item.id} className={styles.activityItem}>
+                                  <div className={styles.appIcon} style={{ backgroundColor: item.appColor }}>
+                                    {item.appIcon}
+                                  </div>
+                                  <div className={styles.activityDetails}>
+                                    <Body1Strong>{item.appName}</Body1Strong>
+                                    <Body1>{item.windowTitle}</Body1>
+                                    <div className={styles.activityMeta}>
+                                      <span className={styles.activityDuration}>{item.duration}</span>
+                                      <Badge appearance="filled" color={statusBadge.color} size="small" className={styles.activityStatusBadge}>
+                                        {statusBadge.text}
+                                      </Badge>
+                                      <span>•</span>
+                                      <span className={styles.activityTime}>{item.timeRange}</span>
+                                    </div>
+                                  </div>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                      {unassigned.length > 0 && (
+                        <div className={styles.timeBlock}>
+                          <div className={styles.timeBlockHeader}>Unassigned</div>
+                          {unassigned.map(item => {
+                            const statusBadge = item.status === 'Pending'
+                              ? { color: 'warning' as const, text: 'Pending' }
+                              : item.status === 'Confirmed'
+                              ? { color: 'success' as const, text: 'Confirmed' }
+                              : { color: 'informative' as const, text: 'Synced' };
 
-              {/* Afternoon Time Block */}
-              <div className={styles.timeBlock}>
-                <div className={styles.timeBlockHeader}>Afternoon</div>
+                            return (
+                              <Card key={item.id} className={styles.activityItem}>
+                                <div className={styles.appIcon} style={{ backgroundColor: item.appColor }}>
+                                  {item.appIcon}
+                                </div>
+                                <div className={styles.activityDetails}>
+                                  <Body1Strong>{item.appName}</Body1Strong>
+                                  <Body1>{item.windowTitle}</Body1>
+                                  <div className={styles.caseAssociation}>
+                                    <span className={styles.unassignedCase}>Unassigned</span>
+                                  </div>
+                                  <div className={styles.activityMeta}>
+                                    <span className={styles.activityDuration}>{item.duration}</span>
+                                    <Badge appearance="filled" color={statusBadge.color} size="small" className={styles.activityStatusBadge}>
+                                      {statusBadge.text}
+                                    </Badge>
+                                    <span>•</span>
+                                    <span className={styles.activityTime}>{item.timeRange}</span>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  );
+                } else {
+                  // Group by time block (Morning/Afternoon)
+                  const morningItems = filteredItems.filter(item => item.timeBlock === 'Morning');
+                  const afternoonItems = filteredItems.filter(item => item.timeBlock === 'Afternoon');
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#DC3E15' }}>
-                    A
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Adobe Acrobat</Body1Strong>
-                    <Body1>Reviewing Deposition Transcript - Smith Deposition.pdf</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>1h 8m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>1:15 PM - 2:23 PM</span>
-                    </div>
-                  </div>
-                </Card>
+                  return (
+                    <>
+                      {morningItems.length > 0 && (
+                        <div className={styles.timeBlock}>
+                          <div className={styles.timeBlockHeader}>Morning</div>
+                          {morningItems.map(item => {
+                            const statusBadge = item.status === 'Pending'
+                              ? { color: 'warning' as const, text: 'Pending' }
+                              : item.status === 'Confirmed'
+                              ? { color: 'success' as const, text: 'Confirmed' }
+                              : { color: 'informative' as const, text: 'Synced' };
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#EA4335' }}>
-                    C
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Chrome</Body1Strong>
-                    <Body1>Case Management - clio.com - Time Entry & Billing</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>18m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>2:30 PM - 2:48 PM</span>
-                    </div>
-                  </div>
-                </Card>
+                            return (
+                              <Card key={item.id} className={styles.activityItem}>
+                                <div className={styles.appIcon} style={{ backgroundColor: item.appColor }}>
+                                  {item.appIcon}
+                                </div>
+                                <div className={styles.activityDetails}>
+                                  <Body1Strong>{item.appName}</Body1Strong>
+                                  <Body1>{item.windowTitle}</Body1>
+                                  {item.caseNumber && item.caseName ? (
+                                    <div className={styles.caseAssociation}>
+                                      <Link className={styles.caseLink} onClick={() => alert(`Navigate to ${item.caseName}`)}>
+                                        Case {item.caseNumber}
+                                      </Link>
+                                    </div>
+                                  ) : (
+                                    <div className={styles.caseAssociation}>
+                                      <span className={styles.unassignedCase}>Unassigned</span>
+                                    </div>
+                                  )}
+                                  <div className={styles.activityMeta}>
+                                    <span className={styles.activityDuration}>{item.duration}</span>
+                                    <Badge appearance="filled" color={statusBadge.color} size="small" className={styles.activityStatusBadge}>
+                                      {statusBadge.text}
+                                    </Badge>
+                                    <span>•</span>
+                                    <span className={styles.activityTime}>{item.timeRange}</span>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {afternoonItems.length > 0 && (
+                        <div className={styles.timeBlock}>
+                          <div className={styles.timeBlockHeader}>Afternoon</div>
+                          {afternoonItems.map(item => {
+                            const statusBadge = item.status === 'Pending'
+                              ? { color: 'warning' as const, text: 'Pending' }
+                              : item.status === 'Confirmed'
+                              ? { color: 'success' as const, text: 'Confirmed' }
+                              : { color: 'informative' as const, text: 'Synced' };
 
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#0072C6' }}>
-                    O
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Outlook</Body1Strong>
-                    <Body1>Email: Client Communication - Case Status Update</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>15m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>3:00 PM - 3:15 PM</span>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className={styles.activityItem}>
-                  <div className={styles.appIcon} style={{ backgroundColor: '#0078D4' }}>
-                    W
-                  </div>
-                  <div className={styles.activityDetails}>
-                    <Body1Strong>Microsoft Word</Body1Strong>
-                    <Body1>Legal Brief - Summary Judgment Motion - Anderson v. State.docx</Body1>
-                    <div className={styles.activityMeta}>
-                      <span className={styles.activityDuration}>57m</span>
-                      <span>•</span>
-                      <span className={styles.activityTime}>3:30 PM - 4:27 PM</span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
+                            return (
+                              <Card key={item.id} className={styles.activityItem}>
+                                <div className={styles.appIcon} style={{ backgroundColor: item.appColor }}>
+                                  {item.appIcon}
+                                </div>
+                                <div className={styles.activityDetails}>
+                                  <Body1Strong>{item.appName}</Body1Strong>
+                                  <Body1>{item.windowTitle}</Body1>
+                                  {item.caseNumber && item.caseName ? (
+                                    <div className={styles.caseAssociation}>
+                                      <Link className={styles.caseLink} onClick={() => alert(`Navigate to ${item.caseName}`)}>
+                                        Case {item.caseNumber}
+                                      </Link>
+                                    </div>
+                                  ) : (
+                                    <div className={styles.caseAssociation}>
+                                      <span className={styles.unassignedCase}>Unassigned</span>
+                                    </div>
+                                  )}
+                                  <div className={styles.activityMeta}>
+                                    <span className={styles.activityDuration}>{item.duration}</span>
+                                    <Badge appearance="filled" color={statusBadge.color} size="small" className={styles.activityStatusBadge}>
+                                      {statusBadge.text}
+                                    </Badge>
+                                    <span>•</span>
+                                    <span className={styles.activityTime}>{item.timeRange}</span>
+                                  </div>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  );
+                }
+              })()}
             </div>
           )}
 
