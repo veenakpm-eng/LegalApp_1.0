@@ -35,6 +35,7 @@ import {
   CheckmarkCircleFilled
 } from '@fluentui/react-icons';
 import SuggestionPopup from './components/SuggestionPopup';
+import TrayDemo from './components/TrayDemo';
 
 type TimeEntryStatus = 'pending' | 'confirmed' | 'synced';
 
@@ -1004,6 +1005,9 @@ const App: React.FC = () => {
         visible={showSuggestionPopup}
         onClose={() => setShowSuggestionPopup(false)}
       />
+
+      {/* Tray Demo Panel */}
+      <TrayDemo onNavigateToActivity={() => setSelectedTab('activity')} />
     </div>
   );
 };
