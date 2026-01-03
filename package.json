@@ -4,6 +4,7 @@
   "description": "Windows Desktop Prototype",
   "main": "dist/main.js",
   "scripts": {
+    "postinstall": "npm run build:main",
     "start": "concurrently \"npm run start:renderer\" \"npm run start:electron\"",
     "start:renderer": "webpack serve --config webpack.renderer.config.js --mode development",
     "start:electron": "wait-on http://localhost:3000 && electron . --no-sandbox",
