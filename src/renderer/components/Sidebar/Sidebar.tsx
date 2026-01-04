@@ -84,7 +84,7 @@ const useStyles = makeStyles({
   sidebar: {
     display: 'flex',
     flexDirection: 'column',
-    width: '240px',
+    width: '220px',
     height: '100%',
     backgroundColor: tokens.colorNeutralBackground2,
     ...shorthands.borderRight('1px', 'solid', tokens.colorNeutralStroke2),
