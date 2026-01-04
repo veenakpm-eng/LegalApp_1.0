@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { FluentProvider } from '@fluentui/react-components';
 import App from './App';
 import TrayFlyout from './components/TrayFlyout/TrayFlyout';
-import { lightTheme, injectMaterialStyles } from './theme/legalAppTheme';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { injectMaterialStyles } from './theme/legalAppTheme';
 
 // Import global styling foundation
 import './styles/global.css';
@@ -23,8 +23,8 @@ const isFlyout = window.location.hash === '#/flyout';
 
 root.render(
   <React.StrictMode>
-    <FluentProvider theme={lightTheme}>
+    <ThemeProvider initialMode="auto">
       {isFlyout ? <TrayFlyout /> : <App />}
-    </FluentProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

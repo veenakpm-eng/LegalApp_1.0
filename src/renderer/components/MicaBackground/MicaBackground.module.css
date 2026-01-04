@@ -1,0 +1,49 @@
+/**
+ * Mica Material CSS Custom Properties
+ *
+ * These CSS variables can be used throughout the app
+ * to maintain consistent Mica theming
+ */
+
+:root {
+  /* Mica Light Mode */
+  --mica-base-light: rgba(255, 255, 255, 0.85);
+  --mica-alt-light: rgba(249, 249, 249, 0.85);
+  --mica-blur-radius: 20px;
+  --mica-saturation: 180%;
+
+  /* Mica Dark Mode */
+  --mica-base-dark: rgba(32, 32, 32, 0.85);
+  --mica-alt-dark: rgba(28, 28, 28, 0.85);
+
+  /* Active Mica Variables (defaults to light) */
+  --mica-base: var(--mica-base-light);
+  --mica-alt: var(--mica-alt-light);
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mica-base: var(--mica-base-dark);
+    --mica-alt: var(--mica-alt-dark);
+  }
+}
+
+/* Mica effect utility class */
+.mica-effect {
+  backdrop-filter: blur(var(--mica-blur-radius)) saturate(var(--mica-saturation));
+  -webkit-backdrop-filter: blur(var(--mica-blur-radius)) saturate(var(--mica-saturation));
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(1px)) {
+  .mica-effect {
+    background-color: rgba(243, 243, 243, 0.95);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .mica-effect {
+      background-color: rgba(28, 28, 28, 0.95);
+    }
+  }
+}

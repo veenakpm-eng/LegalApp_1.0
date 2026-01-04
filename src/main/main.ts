@@ -25,19 +25,35 @@ const getTrayIcon = (state: 'active' | 'idle'): NativeImage => {
  * Create the main application window
  */
 const createWindow = (): void => {
-  mainWindow = new BrowserWindow({
+  const windowOptions: any = {
     width: 1200,
     height: 800,
     show: false, // Don't show until ready
     frame: true,
-    backgroundColor: '#f3f3f3',
+    transparent: true, // Enable transparency for Mica effect
+    backgroundColor: '#00000000', // Fully transparent background
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
     icon: path.join(__dirname, '../../assets/icon.png'),
-  });
+  };
+
+  // Enable vibrancy on macOS
+  if (process.platform === 'darwin') {
+    windowOptions.vibrancy = 'under-window';
+    windowOptions.visualEffectState = 'active';
+  }
+
+  // Enable background material on Windows 11
+  if (process.platform === 'win32') {
+    // Windows 11 Mica effect will be applied via CSS backdrop-filter
+    // The transparent window allows the desktop wallpaper to show through
+    windowOptions.backgroundMaterial = 'mica';
+  }
+
+  mainWindow = new BrowserWindow(windowOptions);
 
   // Load the app
   const isDev = !app.isPackaged;

@@ -13,8 +13,10 @@ import {
 import Sidebar from './components/Sidebar/Sidebar';
 import DocumentsView from './views/DocumentsView/DocumentsView';
 import CasesView from './views/CasesView/CasesView';
+import SettingsView from './views/SettingsView/SettingsView';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
+import MicaBackground from './components/MicaBackground';
 import type { Document } from './views/DocumentsView/DocumentsView';
 import type { Case } from './views/CasesView/CasesView';
 
@@ -42,13 +44,12 @@ const useStyles = makeStyles({
     height: '100vh',
     width: '100vw',
     overflow: 'hidden',
-    background: 'var(--mica-base)',
-    backdropFilter: 'blur(20px) saturate(180%)',
+    // Background is now handled by MicaBackground component
   },
 
   titleBar: {
     height: '32px',
-    backgroundColor: tokens.colorNeutralBackground1,
+    backgroundColor: 'transparent', // Transparent to show Mica effect
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     display: 'flex',
     alignItems: 'center',
@@ -67,7 +68,7 @@ const useStyles = makeStyles({
 
   header: {
     height: '60px',
-    backgroundColor: tokens.colorNeutralBackground1,
+    backgroundColor: 'var(--mica-header)', // Dynamic background using CSS custom property
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     display: 'flex',
     alignItems: 'center',
@@ -75,6 +76,8 @@ const useStyles = makeStyles({
     ...shorthands.padding('0', '20px'),
     ...shorthands.gap('16px'),
     flexShrink: 0,
+    backdropFilter: 'blur(10px)', // Additional blur for header
+    WebkitBackdropFilter: 'blur(10px)', // Safari support
   },
 
   searchContainer: {
@@ -100,8 +103,7 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    background: 'var(--mica-base)',
-    backdropFilter: 'blur(20px) saturate(180%)',
+    // Background is now handled by MicaBackground component
   },
 
   viewContainer: {
@@ -375,14 +377,7 @@ const App: React.FC = () => {
       case 'settings':
         return (
           <div className={contentClass}>
-            <div className={styles.placeholderView}>
-              <div className={styles.placeholderIcon}>⚙️</div>
-              <Text className={styles.placeholderTitle}>Settings View</Text>
-              <Text className={styles.placeholderDescription}>
-                Configure your application preferences, Clio integration settings, notification preferences,
-                and customize how time tracking works for your workflow.
-              </Text>
-            </div>
+            <SettingsView />
           </div>
         );
 
@@ -392,93 +387,95 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={styles.app}>
-      {/* Custom Title Bar */}
-      <div className={styles.titleBar}>
-        <Text className={styles.titleBarText}>LegalApp</Text>
-      </div>
-
-      {/* Header with Search and Settings */}
-      <div className={styles.header}>
-        <div className={styles.searchContainer}>
-          <SearchBox
-            placeholder="Search documents, cases, contacts..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            size="medium"
-          />
+    <MicaBackground variant="auto">
+      <div className={styles.app}>
+        {/* Custom Title Bar */}
+        <div className={styles.titleBar}>
+          <Text className={styles.titleBarText}>LegalApp</Text>
         </div>
 
-        <div className={styles.headerActions}>
-          <Button
-            appearance="subtle"
-            icon={<SettingsRegular />}
-            onClick={() => handleNavigationChange('settings')}
-            aria-label="Settings"
-          >
-            Settings
-          </Button>
-        </div>
-      </div>
+        {/* Header with Search and Settings */}
+        <div className={styles.header}>
+          <div className={styles.searchContainer}>
+            <SearchBox
+              placeholder="Search documents, cases, contacts..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              size="medium"
+            />
+          </div>
 
-      {/* Main Layout */}
-      <div className={styles.mainLayout}>
-        {/* Sidebar - 220px width */}
-        <Sidebar
-          activeItem={currentView}
-          onNavigationChange={handleNavigationChange}
-          items={[
-            {
-              id: 'documents',
-              label: 'Documents',
-              icon: <span>📄</span>,
-              ariaLabel: 'Navigate to Documents',
-            },
-            {
-              id: 'cases',
-              label: 'Cases',
-              icon: <span>💼</span>,
-              ariaLabel: 'Navigate to Cases',
-            },
-            {
-              id: 'activity',
-              label: 'Activity',
-              icon: <span>🕐</span>,
-              ariaLabel: 'Navigate to Activity',
-            },
-            {
-              id: 'timeEntries',
-              label: 'Time Entries',
-              icon: <span>📋</span>,
-              ariaLabel: 'Navigate to Time Entries',
-            },
-            {
-              id: 'settings',
-              label: 'Settings',
-              icon: <SettingsRegular />,
-              ariaLabel: 'Navigate to Settings',
-            },
-          ]}
-        />
-
-        {/* Main Content Area with Mica Background */}
-        <div className={styles.contentArea}>
-          <div className={styles.viewContainer}>
-            {renderViewContent()}
+          <div className={styles.headerActions}>
+            <Button
+              appearance="subtle"
+              icon={<SettingsRegular />}
+              onClick={() => handleNavigationChange('settings')}
+              aria-label="Settings"
+            >
+              Settings
+            </Button>
           </div>
         </div>
+
+        {/* Main Layout */}
+        <div className={styles.mainLayout}>
+          {/* Sidebar - 220px width */}
+          <Sidebar
+            activeItem={currentView}
+            onNavigationChange={handleNavigationChange}
+            items={[
+              {
+                id: 'documents',
+                label: 'Documents',
+                icon: <span>📄</span>,
+                ariaLabel: 'Navigate to Documents',
+              },
+              {
+                id: 'cases',
+                label: 'Cases',
+                icon: <span>💼</span>,
+                ariaLabel: 'Navigate to Cases',
+              },
+              {
+                id: 'activity',
+                label: 'Activity',
+                icon: <span>🕐</span>,
+                ariaLabel: 'Navigate to Activity',
+              },
+              {
+                id: 'timeEntries',
+                label: 'Time Entries',
+                icon: <span>📋</span>,
+                ariaLabel: 'Navigate to Time Entries',
+              },
+              {
+                id: 'settings',
+                label: 'Settings',
+                icon: <SettingsRegular />,
+                ariaLabel: 'Navigate to Settings',
+              },
+            ]}
+          />
+
+          {/* Main Content Area with Mica Background */}
+          <div className={styles.contentArea}>
+            <div className={styles.viewContainer}>
+              {renderViewContent()}
+            </div>
+          </div>
+        </div>
+
+        {/* Suggestion Popup */}
+        <SuggestionPopup
+          visible={suggestionPopupMode !== 'hidden'}
+          onClose={() => setSuggestionPopupMode('hidden')}
+          confidenceLevel={suggestionPopupMode === 'low' ? 'low' : 'high'}
+        />
+
+        {/* Tray Demo Panel */}
+        <TrayDemo onNavigateToActivity={() => handleNavigationChange('activity')} />
       </div>
-
-      {/* Suggestion Popup */}
-      <SuggestionPopup
-        visible={suggestionPopupMode !== 'hidden'}
-        onClose={() => setSuggestionPopupMode('hidden')}
-        confidenceLevel={suggestionPopupMode === 'low' ? 'low' : 'high'}
-      />
-
-      {/* Tray Demo Panel */}
-      <TrayDemo onNavigateToActivity={() => handleNavigationChange('activity')} />
-    </div>
+    </MicaBackground>
   );
 };
 

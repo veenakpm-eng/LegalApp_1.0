@@ -86,12 +86,14 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     width: '220px',
     height: '100%',
-    backgroundColor: tokens.colorNeutralBackground2,
+    backgroundColor: 'var(--mica-sidebar)', // Dynamic background using CSS custom property
     ...shorthands.borderRight('1px', 'solid', tokens.colorNeutralStroke2),
-    transitionProperty: 'width',
+    transitionProperty: 'width, background-color',
     transitionDuration: '200ms',
     transitionTimingFunction: 'cubic-bezier(0.33, 0, 0.67, 1)',
     position: 'relative',
+    backdropFilter: 'blur(10px)', // Additional blur for sidebar
+    WebkitBackdropFilter: 'blur(10px)', // Safari support
   },
 
   sidebarCollapsed: {
