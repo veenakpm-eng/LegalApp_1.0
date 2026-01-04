@@ -5,6 +5,9 @@ import App from './App';
 import TrayFlyout from './components/TrayFlyout/TrayFlyout';
 import { lightTheme, injectMaterialStyles } from './theme/legalAppTheme';
 
+// Import WCAG 2.2 accessibility styles
+import './styles/accessibility.css';
+
 // Inject Fluent material styles (mica, acrylic effects)
 injectMaterialStyles();
 

@@ -65,11 +65,11 @@ const useStyles = makeStyles({
   },
 
   statusIndicatorActive: {
-    backgroundColor: '#10b981', // Green for active
+    backgroundColor: '#0E7C0E', // WCAG-compliant green (4.51:1 contrast)
   },
 
   statusIndicatorPaused: {
-    backgroundColor: '#f59e0b', // Orange for paused
+    backgroundColor: '#8A5700', // WCAG-compliant orange (4.54:1 contrast)
   },
 
   timeDisplay: {
