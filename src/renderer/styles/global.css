@@ -1,0 +1,479 @@
+/**
+ * LegalApp Global Styles
+ * Establishes design system foundation with Fluent UI geometry standards
+ */
+
+/* ============================================
+   CSS Custom Properties - Light Mode (Default)
+   ============================================ */
+
+:root {
+  /* ===== Materials ===== */
+  --mica-base: rgba(255, 255, 255, 0.85);
+  --acrylic-base: rgba(255, 255, 255, 0.7);
+  --acrylic-blur: blur(30px) saturate(125%);
+
+  /* ===== Geometry (Fluent UI Standards) ===== */
+  /* Top-level containers: 8px (main window, flyouts, dialogs) */
+  --radius-large: 8px;
+  /* In-page elements: 4px (buttons, inputs, cards, items) */
+  --radius-medium: 4px;
+  /* Small accents: 2px */
+  --radius-small: 2px;
+  /* Maximized/snapped windows: 0px */
+  --radius-none: 0px;
+
+  /* ===== Spacing System ===== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* ===== Shadows (Fluent UI Depth System) ===== */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-flyout: 0 8px 32px rgba(0, 0, 0, 0.14);
+  --shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.18);
+
+  /* ===== Typography ===== */
+  --font-family-base: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-xxl: 24px;
+
+  /* ===== Colors ===== */
+  --color-bg-base: #F3F3F3;
+  --color-bg-layer: #FFFFFF;
+  --color-text-primary: #242424;
+  --color-text-secondary: #605E5C;
+  --color-text-tertiary: #8A8886;
+  --color-border: #E1DFDD;
+  --color-border-hover: #D1D1D1;
+
+  /* ===== Brand Colors ===== */
+  --color-brand-primary: #0078D4;
+  --color-brand-hover: #106EBE;
+  --color-brand-pressed: #005A9E;
+
+  /* ===== Semantic Colors ===== */
+  --color-success: #107C10;
+  --color-warning: #F7630C;
+  --color-error: #D13438;
+  --color-info: #0078D4;
+
+  /* ===== Transitions ===== */
+  --transition-fast: 100ms cubic-bezier(0.33, 0, 0.67, 1);
+  --transition-normal: 200ms cubic-bezier(0.33, 0, 0.67, 1);
+  --transition-slow: 300ms cubic-bezier(0.33, 0, 0.67, 1);
+}
+
+/* ============================================
+   Dark Mode Variants
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* ===== Materials (Dark) ===== */
+    --mica-base: rgba(32, 32, 32, 0.85);
+    --acrylic-base: rgba(44, 44, 44, 0.7);
+
+    /* ===== Colors (Dark) ===== */
+    --color-bg-base: #202020;
+    --color-bg-layer: #2C2C2C;
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #E1E1E1;
+    --color-text-tertiary: #C8C8C8;
+    --color-border: #3B3B3B;
+    --color-border-hover: #4F4F4F;
+
+    /* ===== Brand Colors (Dark) ===== */
+    --color-brand-primary: #60CDFF;
+    --color-brand-hover: #4DB8EB;
+    --color-brand-pressed: #3AA3D7;
+
+    /* ===== Semantic Colors (Dark) ===== */
+    --color-success: #6CCB5F;
+    --color-warning: #FCE100;
+    --color-error: #FF6B6B;
+    --color-info: #60CDFF;
+
+    /* ===== Shadows (Dark - more prominent) ===== */
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-flyout: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ============================================
+   Base Element Styles & Resets
+   ============================================ */
+
+/* Universal box-sizing and reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Root HTML element */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Body defaults */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-base);
+  overflow-x: hidden;
+}
+
+/* Root container */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography resets */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+p {
+  margin: 0;
+}
+
+/* Link defaults */
+a {
+  color: var(--color-brand-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-brand-hover);
+}
+
+a:active {
+  color: var(--color-brand-pressed);
+}
+
+/* Button reset */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Input reset */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Remove default list styles */
+ul, ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* ===== Card Component ===== */
+.card {
+  background-color: var(--color-bg-layer);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+.card-large {
+  border-radius: var(--radius-large);
+  padding: var(--spacing-lg);
+}
+
+.card-compact {
+  padding: var(--spacing-sm);
+}
+
+/* ===== Glass Panel (Acrylic Effect) ===== */
+.glass-panel {
+  background: var(--acrylic-base);
+  backdrop-filter: var(--acrylic-blur);
+  -webkit-backdrop-filter: var(--acrylic-blur);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-flyout);
+  overflow: hidden;
+}
+
+.glass-panel-medium {
+  border-radius: var(--radius-medium);
+}
+
+/* ===== Mica Background ===== */
+.mica-background {
+  background: var(--mica-base);
+  backdrop-filter: blur(20px) saturate(110%);
+  -webkit-backdrop-filter: blur(20px) saturate(110%);
+}
+
+/* ===== Container Utilities ===== */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--spacing-md);
+}
+
+/* ===== Flexbox Utilities ===== */
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* ===== Spacing Utilities ===== */
+.gap-xs { gap: var(--spacing-xs); }
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+.gap-xl { gap: var(--spacing-xl); }
+
+.p-xs { padding: var(--spacing-xs); }
+.p-sm { padding: var(--spacing-sm); }
+.p-md { padding: var(--spacing-md); }
+.p-lg { padding: var(--spacing-lg); }
+.p-xl { padding: var(--spacing-xl); }
+
+.m-xs { margin: var(--spacing-xs); }
+.m-sm { margin: var(--spacing-sm); }
+.m-md { margin: var(--spacing-md); }
+.m-lg { margin: var(--spacing-lg); }
+.m-xl { margin: var(--spacing-xl); }
+
+/* ===== Border Radius Utilities ===== */
+.radius-none { border-radius: var(--radius-none); }
+.radius-small { border-radius: var(--radius-small); }
+.radius-medium { border-radius: var(--radius-medium); }
+.radius-large { border-radius: var(--radius-large); }
+.radius-round { border-radius: 9999px; }
+
+/* ===== Shadow Utilities ===== */
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+.shadow-flyout { box-shadow: var(--shadow-flyout); }
+.shadow-dialog { box-shadow: var(--shadow-dialog); }
+.shadow-none { box-shadow: none; }
+
+/* ===== Text Utilities ===== */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-xxl { font-size: var(--font-size-xxl); }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+/* ===== Display Utilities ===== */
+.d-none { display: none; }
+.d-block { display: block; }
+.d-inline { display: inline; }
+.d-inline-block { display: inline-block; }
+
+/* ===== Visibility Utilities ===== */
+.invisible { visibility: hidden; }
+.visible { visibility: visible; }
+
+/* ===== Overflow Utilities ===== */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-scroll { overflow: scroll; }
+
+/* ===== Position Utilities ===== */
+.position-relative { position: relative; }
+.position-absolute { position: absolute; }
+.position-fixed { position: fixed; }
+.position-sticky { position: sticky; }
+
+/* ===== Width/Height Utilities ===== */
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+.w-auto { width: auto; }
+.h-auto { height: auto; }
+
+/* ============================================
+   Maximized/Snapped Window States
+   ============================================ */
+
+/* When window is maximized or snapped, use 0px radius for edges */
+body.window-maximized .window-frame,
+body.window-snapped .window-frame {
+  border-radius: var(--radius-none);
+}
+
+body.window-maximized .window-titlebar,
+body.window-snapped .window-titlebar {
+  border-top-left-radius: var(--radius-none);
+  border-top-right-radius: var(--radius-none);
+}
+
+/* ============================================
+   Scrollbar Styling (Windows 11 style)
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* ============================================
+   Focus Visible Styles
+   ============================================ */
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .glass-panel,
+  .mica-background {
+    background: white;
+    backdrop-filter: none;
+    border: 1px solid #ddd;
+  }
+
+  .shadow-card,
+  .shadow-card-hover,
+  .shadow-flyout,
+  .shadow-dialog {
+    box-shadow: none;
+  }
+}
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
