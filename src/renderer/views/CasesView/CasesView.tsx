@@ -3,7 +3,6 @@ import {
   makeStyles,
   shorthands,
   tokens,
-  Card,
   Text,
   Badge,
   Button,
@@ -15,6 +14,7 @@ import {
   ClockRegular,
   PersonRegular,
 } from '@fluentui/react-icons';
+import Card from '../../components/Card/Card';
 
 /**
  * CasesView Component
@@ -199,32 +199,6 @@ const useStyles = makeStyles({
 });
 
 const useCaseCardStyles = makeStyles({
-  card: {
-    ...shorthands.padding('16px', '20px'),
-    backgroundColor: tokens.colorNeutralBackground1,
-    boxShadow: 'var(--shadow-card)',
-    ...shorthands.borderRadius('var(--radius-medium)'),
-    cursor: 'pointer',
-    transitionProperty: 'box-shadow, transform',
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveEasyEase,
-    position: 'relative',
-
-    ':hover': {
-      boxShadow: 'var(--shadow-card-hover)',
-      transform: 'translateY(-1px)',
-    },
-
-    ':active': {
-      transform: 'translateY(0)',
-    },
-
-    ':focus-visible': {
-      ...shorthands.outline('2px', 'solid', tokens.colorBrandStroke1),
-      outlineOffset: '2px',
-    },
-  },
-
   cardContent: {
     display: 'flex',
     flexDirection: 'column',
@@ -344,19 +318,8 @@ const CaseCard: React.FC<CaseCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const statusConfig = getStatusConfig(caseItem.status);
 
-  const handleClick = (e: React.MouseEvent) => {
-    // Don't trigger card click if clicking on action buttons
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
-    }
+  const handleClick = () => {
     onClick?.(caseItem);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick?.(caseItem);
-    }
   };
 
   const handleViewDetails = (e: React.MouseEvent) => {
@@ -378,13 +341,11 @@ const CaseCard: React.FC<CaseCardProps> = ({
 
   return (
     <Card
-      className={styles.card}
+      variant="elevated"
+      interactive={true}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      tabIndex={0}
-      role="button"
       aria-label={`Case ${caseItem.caseNumber}, Status: ${caseItem.status}`}
     >
       <div className={styles.cardContent}>

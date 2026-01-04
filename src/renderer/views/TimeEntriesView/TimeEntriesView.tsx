@@ -3,7 +3,6 @@ import {
   makeStyles,
   shorthands,
   tokens,
-  Card,
   Text,
   Badge,
   Button,
@@ -25,6 +24,7 @@ import {
   DeleteDismissFilled,
   EditFilled,
 } from '@fluentui/react-icons';
+import Card from '../../components/Card/Card';
 
 /**
  * TimeEntriesView Component
@@ -316,32 +316,9 @@ const useStyles = makeStyles({
 });
 
 const useTimeEntryCardStyles = makeStyles({
-  card: {
-    ...shorthands.padding('16px', '20px'),
-    backgroundColor: tokens.colorNeutralBackground1,
-    boxShadow: 'var(--shadow-card)',
-    ...shorthands.borderRadius('var(--radius-medium)'),
-    cursor: 'pointer',
-    transitionProperty: 'box-shadow, transform',
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveEasyEase,
-    position: 'relative',
+  cardContent: {
     display: 'flex',
     ...shorthands.gap('16px'),
-
-    ':hover': {
-      boxShadow: 'var(--shadow-card-hover)',
-      transform: 'translateY(-1px)',
-    },
-
-    ':active': {
-      transform: 'translateY(0)',
-    },
-
-    ':focus-visible': {
-      ...shorthands.outline('2px', 'solid', tokens.colorBrandStroke1),
-      outlineOffset: '2px',
-    },
   },
 
   checkboxContainer: {
@@ -526,8 +503,13 @@ const TimeEntryCard: React.FC<TimeEntryCardProps> = ({
   const isAutoCapture = entry.source === 'Auto-captured';
 
   return (
-    <Card className={styles.card}>
-      <div className={styles.checkboxContainer}>
+    <Card
+      variant="elevated"
+      interactive={false}
+      selected={isSelected}
+    >
+      <div className={styles.cardContent}>
+        <div className={styles.checkboxContainer}>
         <Checkbox
           checked={isSelected}
           onChange={handleCheckboxChange}
@@ -615,6 +597,7 @@ const TimeEntryCard: React.FC<TimeEntryCardProps> = ({
             />
           </div>
         </div>
+      </div>
       </div>
     </Card>
   );

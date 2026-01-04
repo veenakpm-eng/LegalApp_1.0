@@ -3,7 +3,6 @@ import {
   makeStyles,
   shorthands,
   tokens,
-  Card,
   Text,
   Badge,
 } from '@fluentui/react-components';
@@ -15,6 +14,7 @@ import {
   DocumentDataRegular,
   DocumentImageRegular,
 } from '@fluentui/react-icons';
+import Card from '../../components/Card/Card';
 
 /**
  * DocumentsView Component
@@ -155,27 +155,10 @@ const useStyles = makeStyles({
 });
 
 const useDocumentCardStyles = makeStyles({
-  card: {
-    ...shorthands.padding('16px'),
-    backgroundColor: tokens.colorNeutralBackground1,
-    boxShadow: 'var(--shadow-card)',
-    ...shorthands.borderRadius('var(--radius-medium)'),
-    cursor: 'pointer',
-    transitionProperty: 'box-shadow, transform',
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveEasyEase,
+  cardContent: {
     display: 'flex',
     alignItems: 'flex-start',
     ...shorthands.gap('16px'),
-
-    ':hover': {
-      boxShadow: 'var(--shadow-card-hover)',
-      transform: 'translateY(-1px)',
-    },
-
-    ':active': {
-      transform: 'translateY(0)',
-    },
   },
 
   iconContainer: {
@@ -262,51 +245,44 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onClick }) => {
     onClick?.(document);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick?.(document);
-    }
-  };
-
   return (
     <Card
-      className={styles.card}
+      variant="elevated"
+      interactive={true}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="button"
       aria-label={`Open document ${document.title}`}
     >
-      <div className={styles.iconContainer}>
-        {getDocumentIcon(document.fileType)}
-      </div>
-
-      <div className={styles.content}>
-        <div className={styles.titleRow}>
-          <Text className={styles.title} title={document.title}>
-            {document.title}
-          </Text>
-          {document.caseName && (
-            <Badge
-              appearance="tint"
-              size="small"
-              className={styles.caseBadge}
-            >
-              {document.caseName}
-            </Badge>
-          )}
+      <div className={styles.cardContent}>
+        <div className={styles.iconContainer}>
+          {getDocumentIcon(document.fileType)}
         </div>
 
-        <Text className={styles.metadata}>
-          Modified {getRelativeTime(document.modifiedDate)}
-        </Text>
+        <div className={styles.content}>
+          <div className={styles.titleRow}>
+            <Text className={styles.title} title={document.title}>
+              {document.title}
+            </Text>
+            {document.caseName && (
+              <Badge
+                appearance="tint"
+                size="small"
+                className={styles.caseBadge}
+              >
+                {document.caseName}
+              </Badge>
+            )}
+          </div>
 
-        {document.caseNumber && (
           <Text className={styles.metadata}>
-            Case: {document.caseNumber}
+            Modified {getRelativeTime(document.modifiedDate)}
           </Text>
-        )}
+
+          {document.caseNumber && (
+            <Text className={styles.metadata}>
+              Case: {document.caseNumber}
+            </Text>
+          )}
+        </div>
       </div>
     </Card>
   );
