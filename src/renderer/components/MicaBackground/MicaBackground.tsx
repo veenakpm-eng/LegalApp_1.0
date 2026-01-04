@@ -109,8 +109,8 @@ const MicaBackground: React.FC<MicaBackgroundProps> = ({
 
     // Also check for WebKit prefix
     if (!hasBackdropFilter) {
-      testElement.style.webkitBackdropFilter = 'blur(10px)';
-      const hasWebkitBackdropFilter = testElement.style.webkitBackdropFilter !== '';
+      (testElement.style as any).webkitBackdropFilter = 'blur(10px)';
+      const hasWebkitBackdropFilter = (testElement.style as any).webkitBackdropFilter !== '';
       setSupportsBackdropFilter(hasWebkitBackdropFilter);
     } else {
       setSupportsBackdropFilter(true);
