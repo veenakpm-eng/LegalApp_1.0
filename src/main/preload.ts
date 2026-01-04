@@ -22,4 +22,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
   },
+
+  // Action APIs for flyout
+  actions: {
+    toggleTracking: () => ipcRenderer.send('action:toggle-tracking'),
+    openMainWindow: () => ipcRenderer.send('action:open-main-window'),
+  },
+
+  // IPC event listener APIs
+  ipcRenderer: {
+    on: (channel: string, func: (...args: any[]) => void) => {
+      // Whitelist channels for security
+      const validChannels = ['tracking-state-changed', 'navigate-to', 'trigger-sync'];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.on(channel, (_event, ...args) => func(...args));
+      }
+    },
+    removeListener: (channel: string, func: (...args: any[]) => void) => {
+      const validChannels = ['tracking-state-changed', 'navigate-to', 'trigger-sync'];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.removeListener(channel, func);
+      }
+    },
+  },
 });

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, screen, NativeImage } from 'electron';
 import * as path from 'path';
 import { Positioner } from 'electron-positioner';
 
@@ -12,7 +12,7 @@ let currentTooltip = 'LegalApp · Tracking · 0h 0m today';
 /**
  * Get the appropriate tray icon based on the current state
  */
-const getTrayIcon = (state: 'active' | 'idle'): nativeImage => {
+const getTrayIcon = (state: 'active' | 'idle'): NativeImage => {
   const iconName = state === 'active' ? 'tray-active.png' : 'tray-idle.png';
   const iconPath = app.isPackaged
     ? path.join(process.resourcesPath, 'assets', iconName)
@@ -314,6 +314,42 @@ const setupIPCHandlers = (): void => {
       window.unmaximize();
     } else {
       window?.maximize();
+    }
+  });
+
+  // Action handlers for flyout
+  ipcMain.on('action:toggle-tracking', () => {
+    // Toggle tracking state
+    isTrackingActive = !isTrackingActive;
+
+    // Update tray icon
+    const newState = isTrackingActive ? 'active' : 'idle';
+    tray?.setImage(getTrayIcon(newState));
+
+    // Update tray menu
+    updateTrayMenu();
+
+    // Notify all windows of state change
+    if (mainWindow) {
+      mainWindow.webContents.send('tracking-state-changed', isTrackingActive);
+    }
+    if (flyoutWindow) {
+      flyoutWindow.webContents.send('tracking-state-changed', isTrackingActive);
+    }
+  });
+
+  ipcMain.on('action:open-main-window', () => {
+    // Hide flyout
+    if (flyoutWindow) {
+      flyoutWindow.hide();
+    }
+
+    // Show or create main window
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    } else {
+      createWindow();
     }
   });
 };
