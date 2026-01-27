@@ -11,6 +11,7 @@ import {
   PlayRegular,
   PauseRegular,
   WindowRegular,
+  NoteRegular,
 } from '@fluentui/react-icons';
 
 /**
@@ -70,6 +71,49 @@ const useStyles = makeStyles({
 
   statusIndicatorPaused: {
     backgroundColor: '#8A5700', // WCAG-compliant orange (4.54:1 contrast)
+  },
+
+  statusIndicatorNeedsReview: {
+    backgroundColor: '#0078D4', // Calm brand blue — informative, not alarming
+  },
+
+  reviewSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+    ...shorthands.padding('12px'),
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    backgroundColor: 'rgba(0, 120, 212, 0.06)',
+    ...shorthands.border('1px', 'solid', 'rgba(0, 120, 212, 0.2)'),
+  },
+
+  reviewLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    color: '#0078D4',
+  },
+
+  reviewText: {
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground1,
+    lineHeight: '18px',
+  },
+
+  reviewButton: {
+    width: '100%',
+    backgroundColor: 'rgba(0, 120, 212, 0.08)',
+    color: '#0078D4',
+    ...shorthands.border('1px', 'solid', 'rgba(0, 120, 212, 0.25)'),
+    transition: 'all 0.15s ease-in-out',
+    ':hover': {
+      backgroundColor: 'rgba(0, 120, 212, 0.14)',
+      ...shorthands.border('1px', 'solid', 'rgba(0, 120, 212, 0.35)'),
+    },
+    ':active': {
+      backgroundColor: 'rgba(0, 120, 212, 0.18)',
+    },
   },
 
   timeDisplay: {
@@ -163,6 +207,7 @@ const TrayFlyout: React.FC<TrayFlyoutProps> = () => {
   const [trackedTime, setTrackedTime] = useState<string>('3h 42m');
   const [currentActivity, setCurrentActivity] = useState<string>('Reviewing Case #2024-1847');
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(13320); // 3h 42m in seconds
+  const [needsReviewCount] = useState<number>(2); // Mock: 2 entries need review
 
   // Listen for tracking state changes from main process
   useEffect(() => {
@@ -202,8 +247,9 @@ const TrayFlyout: React.FC<TrayFlyoutProps> = () => {
         setTrackedTime(formattedTime);
 
         // Update tray tooltip
+        const reviewSuffix = needsReviewCount > 0 ? ` · ${needsReviewCount} to review` : '';
         window.electronAPI.tray.updateTooltip(
-          `LegalApp · ${isTracking ? 'Tracking' : 'Paused'} · ${formattedTime} today`
+          `LegalApp · ${isTracking ? 'Tracking' : 'Paused'} · ${formattedTime} today${reviewSuffix}`
         );
 
         return newSeconds;
@@ -231,11 +277,19 @@ const TrayFlyout: React.FC<TrayFlyoutProps> = () => {
           <div className={styles.statusHeader}>
             <div
               className={`${styles.statusIndicator} ${
-                isTracking ? styles.statusIndicatorActive : styles.statusIndicatorPaused
+                needsReviewCount > 0 && isTracking
+                  ? styles.statusIndicatorNeedsReview
+                  : isTracking
+                    ? styles.statusIndicatorActive
+                    : styles.statusIndicatorPaused
               }`}
             />
             <Text weight="semibold" size={300}>
-              {isTracking ? 'Tracking Active' : 'Tracking Paused'}
+              {needsReviewCount > 0 && isTracking
+                ? 'Needs Review'
+                : isTracking
+                  ? 'Tracking Active'
+                  : 'Tracking Paused'}
             </Text>
           </div>
         </div>
@@ -251,6 +305,25 @@ const TrayFlyout: React.FC<TrayFlyoutProps> = () => {
           <div className={styles.activitySection}>
             <div className={styles.activityLabel}>Current Activity</div>
             <Text className={styles.activityText}>{currentActivity}</Text>
+          </div>
+        )}
+
+        {/* Needs Review Section (shown when entries need review) */}
+        {needsReviewCount > 0 && isTracking && (
+          <div className={styles.reviewSection}>
+            <div className={styles.reviewLabel}>Needs Review</div>
+            <Text className={styles.reviewText}>
+              {needsReviewCount} {needsReviewCount === 1 ? 'entry needs' : 'entries need'} review
+            </Text>
+            <Button
+              appearance="subtle"
+              icon={<NoteRegular />}
+              className={styles.reviewButton}
+              size="small"
+              onClick={handleOpenApp}
+            >
+              Review Entries
+            </Button>
           </div>
         )}
 
