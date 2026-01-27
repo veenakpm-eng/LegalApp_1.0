@@ -14,6 +14,7 @@ import Sidebar from './components/Sidebar/Sidebar';
 import DocumentsView from './views/DocumentsView/DocumentsView';
 import CasesView from './views/CasesView/CasesView';
 import TimeEntriesView from './views/TimeEntriesView/TimeEntriesView';
+import ActivityView from './views/ActivityView/ActivityView';
 import SettingsView from './views/SettingsView/SettingsView';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
@@ -131,32 +132,6 @@ const useStyles = makeStyles({
     transform: 'translateY(-10px)',
   },
 
-  placeholderView: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    ...shorthands.gap('16px'),
-    textAlign: 'center',
-  },
-
-  placeholderIcon: {
-    fontSize: '64px',
-    color: tokens.colorNeutralForeground4,
-  },
-
-  placeholderTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: tokens.colorNeutralForeground2,
-  },
-
-  placeholderDescription: {
-    fontSize: '14px',
-    color: tokens.colorNeutralForeground3,
-    maxWidth: '500px',
-  },
 });
 
 // Sample data for DocumentsView
@@ -350,14 +325,7 @@ const App: React.FC = () => {
       case 'activity':
         return (
           <div className={contentClass}>
-            <div className={styles.placeholderView}>
-              <div className={styles.placeholderIcon}>📊</div>
-              <Text className={styles.placeholderTitle}>Activity View</Text>
-              <Text className={styles.placeholderDescription}>
-                Track your daily work activities and time spent across different applications and documents.
-                This view will show your activity timeline, app usage, and work patterns.
-              </Text>
-            </div>
+            <ActivityView />
           </div>
         );
 
