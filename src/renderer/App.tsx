@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   makeStyles,
   shorthands,
@@ -18,6 +18,7 @@ import ActivityView from './views/ActivityView/ActivityView';
 import SettingsView from './views/SettingsView/SettingsView';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
+import TrackingPausedBanner from './components/TrackingPausedBanner';
 import MicaBackground from './components/MicaBackground';
 import type { Document } from './views/DocumentsView/DocumentsView';
 import type { Case } from './views/CasesView/CasesView';
@@ -249,6 +250,39 @@ const App: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [suggestionPopupMode, setSuggestionPopupMode] = useState<'hidden' | 'high' | 'low'>('hidden');
   const [highlightedSuggestedEntryId, setHighlightedSuggestedEntryId] = useState<string | null>(null);
+  const [isTrackingActive, setIsTrackingActive] = useState<boolean>(true);
+  const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(false);
+
+  // Listen for tracking state changes from the main process
+  useEffect(() => {
+    const handleTrackingStateChanged = (state: boolean) => {
+      setIsTrackingActive(state);
+      // Re-show banner when tracking is paused again after a previous dismiss
+      if (!state) {
+        setIsBannerDismissed(false);
+      }
+    };
+
+    if (window.electronAPI?.ipcRenderer) {
+      window.electronAPI.ipcRenderer.on('tracking-state-changed', handleTrackingStateChanged);
+    }
+
+    return () => {
+      if (window.electronAPI?.ipcRenderer) {
+        window.electronAPI.ipcRenderer.removeListener('tracking-state-changed', handleTrackingStateChanged);
+      }
+    };
+  }, []);
+
+  const handleResumeTracking = useCallback(() => {
+    if (window.electronAPI?.actions) {
+      window.electronAPI.actions.toggleTracking();
+    }
+  }, []);
+
+  const handleDismissBanner = useCallback(() => {
+    setIsBannerDismissed(true);
+  }, []);
 
   // Handle view navigation with smooth transitions
   const handleNavigationChange = (viewId: string) => {
@@ -397,6 +431,13 @@ const App: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Tracking Paused Banner */}
+        <TrackingPausedBanner
+          visible={!isTrackingActive && !isBannerDismissed}
+          onResume={handleResumeTracking}
+          onDismiss={handleDismissBanner}
+        />
 
         {/* Main Layout */}
         <div className={styles.mainLayout}>
