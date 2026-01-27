@@ -26,6 +26,9 @@ import {
   DeleteDismissFilled,
   EditFilled,
   DismissRegular,
+  InfoRegular,
+  ChevronDownRegular,
+  ChevronUpRegular,
 } from '@fluentui/react-icons';
 
 /**
@@ -662,6 +665,34 @@ const suggestedTimeEntries: SuggestedTimeEntry[] = [
   },
 ];
 
+interface EntryExplanation {
+  applications: { name: string; duration: string }[];
+  relatedDocument: string;
+}
+
+const entryExplanations: Record<string, EntryExplanation> = {
+  'sug-1': {
+    applications: [
+      { name: 'Outlook', duration: '18 minutes' },
+    ],
+    relatedDocument: 'Email thread linked to Johnson v. Tech Corp discovery deadline',
+  },
+  'sug-2': {
+    applications: [
+      { name: 'Word', duration: '52 minutes' },
+      { name: 'Adobe Acrobat', duration: '20 minutes' },
+    ],
+    relatedDocument: 'Contract_Amendment_v3.docx linked to ABC Corp Matter',
+  },
+  'sug-3': {
+    applications: [
+      { name: 'Edge', duration: '22 minutes' },
+      { name: 'Word', duration: '8 minutes' },
+    ],
+    relatedDocument: 'Case law notes linked to Anderson v. State motion filing',
+  },
+};
+
 // ============================================
 // Suggested Card Styles
 // ============================================
@@ -860,6 +891,85 @@ const useSuggestedCardStyles = makeStyles({
     flexDirection: 'column',
     ...shorthands.gap('12px'),
   },
+
+  whyLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    ...shorthands.gap('4px'),
+    fontSize: '12px',
+    fontWeight: '500',
+    color: tokens.colorBrandForeground1,
+    cursor: 'pointer',
+    background: 'none',
+    ...shorthands.border('0'),
+    ...shorthands.padding('2px', '0'),
+    lineHeight: '16px',
+
+    ':hover': {
+      textDecorationLine: 'underline',
+      color: tokens.colorBrandForeground2,
+    },
+
+    ':focus-visible': {
+      ...shorthands.outline('2px', 'solid', tokens.colorBrandStroke1),
+      outlineOffset: '2px',
+      ...shorthands.borderRadius('2px'),
+    },
+  },
+
+  whyLinkIcon: {
+    fontSize: '14px',
+    flexShrink: 0,
+  },
+
+  whyChevron: {
+    fontSize: '12px',
+    flexShrink: 0,
+  },
+
+  explanationPanel: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('6px'),
+    ...shorthands.padding('10px', '12px'),
+    ...shorthands.borderRadius('6px'),
+    backgroundColor: 'rgba(0, 90, 158, 0.04)',
+    ...shorthands.borderWidth('1px'),
+    ...shorthands.borderStyle('solid'),
+    ...shorthands.borderColor('rgba(0, 90, 158, 0.1)'),
+  },
+
+  explanationTitle: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '16px',
+  },
+
+  explanationList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('3px'),
+    ...shorthands.margin('0'),
+    ...shorthands.padding('0'),
+    listStyleType: 'none',
+  },
+
+  explanationItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    ...shorthands.gap('6px'),
+    fontSize: '12px',
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '16px',
+  },
+
+  explanationBullet: {
+    flexShrink: 0,
+    color: tokens.colorBrandForeground1,
+    fontWeight: '600',
+    lineHeight: '16px',
+  },
 });
 
 // ============================================
@@ -877,6 +987,7 @@ const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry
     taskType: entry.taskType,
     description: entry.description,
   });
+  const [isExplanationOpen, setIsExplanationOpen] = useState(false);
 
   const handleConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -922,6 +1033,12 @@ const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry
 
   const badge = getBadgeConfig();
   const displayDuration = parseFloat(editData.duration) || 0;
+  const explanation = entryExplanations[entry.id];
+
+  const handleToggleExplanation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExplanationOpen(prev => !prev);
+  };
 
   const cardClassName = [
     styles.card,
@@ -999,6 +1116,48 @@ const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry
             </div>
           )}
         </div>
+
+        {/* Why this entry? explanation */}
+        {cardState === 'suggested' && explanation && !isEditing && (
+          <>
+            <button
+              className={styles.whyLink}
+              onClick={handleToggleExplanation}
+              aria-expanded={isExplanationOpen}
+              aria-controls={`explanation-${entry.id}`}
+            >
+              <InfoRegular className={styles.whyLinkIcon} />
+              <span>Why this entry?</span>
+              {isExplanationOpen ? (
+                <ChevronUpRegular className={styles.whyChevron} />
+              ) : (
+                <ChevronDownRegular className={styles.whyChevron} />
+              )}
+            </button>
+            {isExplanationOpen && (
+              <div
+                id={`explanation-${entry.id}`}
+                className={styles.explanationPanel}
+                role="region"
+                aria-label="Entry explanation"
+              >
+                <Text className={styles.explanationTitle}>Based on:</Text>
+                <ul className={styles.explanationList}>
+                  {explanation.applications.map((app, idx) => (
+                    <li key={idx} className={styles.explanationItem}>
+                      <span className={styles.explanationBullet}>•</span>
+                      <span>{app.name} activity ({app.duration})</span>
+                    </li>
+                  ))}
+                  <li className={styles.explanationItem}>
+                    <span className={styles.explanationBullet}>•</span>
+                    <span>{explanation.relatedDocument}</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Actions footer */}
         <div className={styles.footer}>
