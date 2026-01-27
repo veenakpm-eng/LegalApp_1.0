@@ -9,6 +9,8 @@ import {
   MailRegular,
   DocumentTextRegular,
   CallRegular,
+  CalendarClockRegular,
+  ArrowRightRegular,
 } from '@fluentui/react-icons';
 
 /**
@@ -36,6 +38,13 @@ interface ActivityEvent {
   description: string;
   startTime: Date;
   endTime: Date;
+  /** ID of a linked suggested time entry, if one exists */
+  linkedSuggestedEntryId?: string;
+}
+
+export interface ActivityViewProps {
+  /** Called when the user clicks a "View suggested entry" link */
+  onViewSuggestedEntry?: (suggestedEntryId: string) => void;
 }
 
 // ============================================
@@ -137,6 +146,7 @@ const mockActivities: ActivityEvent[] = [
     description: 'Reply to Johnson v. Tech Corp discovery deadline thread',
     startTime: makeTime(today, 14, 10),
     endTime: makeTime(today, 14, 28),
+    linkedSuggestedEntryId: 'sug-1',
   },
   {
     id: 't2',
@@ -194,6 +204,7 @@ const mockActivities: ActivityEvent[] = [
     description: 'Drafting argument section for Anderson v. State motion',
     startTime: makeTime(yesterday, 14, 30),
     endTime: makeTime(yesterday, 15, 45),
+    linkedSuggestedEntryId: 'sug-3',
   },
   {
     id: 'y3',
@@ -210,6 +221,7 @@ const mockActivities: ActivityEvent[] = [
     description: 'Reviewing amended terms in corporate acquisition agreement',
     startTime: makeTime(yesterday, 10, 30),
     endTime: makeTime(yesterday, 12, 0),
+    linkedSuggestedEntryId: 'sug-2',
   },
   {
     id: 'y5',
@@ -442,13 +454,48 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     lineHeight: '18px',
   },
+
+  linkedEntryLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    ...shorthands.gap('5px'),
+    fontSize: '12px',
+    fontWeight: '500',
+    color: tokens.colorBrandForeground1,
+    cursor: 'pointer',
+    background: 'none',
+    ...shorthands.border('0'),
+    ...shorthands.padding('4px', '0', '0', '0'),
+    lineHeight: '16px',
+
+    ':hover': {
+      textDecorationLine: 'underline',
+      color: tokens.colorBrandForeground2,
+    },
+
+    ':focus-visible': {
+      ...shorthands.outline('2px', 'solid', tokens.colorBrandStroke1),
+      outlineOffset: '2px',
+      ...shorthands.borderRadius('2px'),
+    },
+  },
+
+  linkedEntryIcon: {
+    fontSize: '14px',
+    flexShrink: 0,
+  },
+
+  linkedEntryArrow: {
+    fontSize: '12px',
+    flexShrink: 0,
+  },
 });
 
 // ============================================
 // ActivityView Component
 // ============================================
 
-const ActivityView: React.FC = () => {
+const ActivityView: React.FC<ActivityViewProps> = ({ onViewSuggestedEntry }) => {
   const styles = useStyles();
   const groups = groupByDay(mockActivities);
 
@@ -528,6 +575,19 @@ const ActivityView: React.FC = () => {
                     <Text className={styles.cardDescription}>
                       {event.description}
                     </Text>
+
+                    {/* Link to suggested time entry */}
+                    {event.linkedSuggestedEntryId && (
+                      <button
+                        className={styles.linkedEntryLink}
+                        onClick={() => onViewSuggestedEntry?.(event.linkedSuggestedEntryId!)}
+                        aria-label="View linked suggested time entry"
+                      >
+                        <CalendarClockRegular className={styles.linkedEntryIcon} />
+                        <span>View suggested entry</span>
+                        <ArrowRightRegular className={styles.linkedEntryArrow} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

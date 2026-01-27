@@ -248,11 +248,14 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [suggestionPopupMode, setSuggestionPopupMode] = useState<'hidden' | 'high' | 'low'>('hidden');
+  const [highlightedSuggestedEntryId, setHighlightedSuggestedEntryId] = useState<string | null>(null);
 
   // Handle view navigation with smooth transitions
   const handleNavigationChange = (viewId: string) => {
     if (viewId === currentView) return;
 
+    // Clear any lingering highlight when navigating
+    setHighlightedSuggestedEntryId(null);
     setIsTransitioning(true);
 
     // Wait for fade out, then change view
@@ -260,6 +263,22 @@ const App: React.FC = () => {
       setCurrentView(viewId as ViewType);
       setIsTransitioning(false);
     }, 150);
+  };
+
+  // Navigate from Activity to Time Entries and highlight a suggested entry
+  const handleViewSuggestedEntry = (suggestedEntryId: string) => {
+    setHighlightedSuggestedEntryId(suggestedEntryId);
+    setIsTransitioning(true);
+
+    setTimeout(() => {
+      setCurrentView('timeEntries');
+      setIsTransitioning(false);
+    }, 150);
+
+    // Auto-clear highlight after the animation plays
+    setTimeout(() => {
+      setHighlightedSuggestedEntryId(null);
+    }, 3500);
   };
 
   // Handle search
@@ -325,14 +344,14 @@ const App: React.FC = () => {
       case 'activity':
         return (
           <div className={contentClass}>
-            <ActivityView />
+            <ActivityView onViewSuggestedEntry={handleViewSuggestedEntry} />
           </div>
         );
 
       case 'timeEntries':
         return (
           <div className={contentClass}>
-            <TimeEntriesView />
+            <TimeEntriesView highlightedSuggestedEntryId={highlightedSuggestedEntryId} />
           </div>
         );
 
