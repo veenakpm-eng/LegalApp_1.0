@@ -14,6 +14,8 @@ import {
   DocumentTableRegular,
   DocumentDataRegular,
   DocumentImageRegular,
+  LinkRegular,
+  PulseRegular,
 } from '@fluentui/react-icons';
 
 /**
@@ -40,6 +42,10 @@ export interface Document {
   caseName?: string;
   caseNumber?: string;
   filePath?: string;
+  /** Whether this document is linked to a suggested time entry */
+  linkedToSuggestion?: boolean;
+  /** Whether this document has recent work activity detected */
+  recentActivity?: boolean;
 }
 
 export interface DocumentsViewProps {
@@ -226,6 +232,54 @@ const useDocumentCardStyles = makeStyles({
   caseBadge: {
     fontSize: '11px',
   },
+
+  indicatorsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('12px'),
+    flexWrap: 'wrap',
+    marginTop: '2px',
+  },
+
+  indicator: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    ...shorthands.gap('4px'),
+    fontSize: '11px',
+    lineHeight: '16px',
+    color: tokens.colorNeutralForeground4,
+    fontFamily: 'Segoe UI Variable, Segoe UI, sans-serif',
+  },
+
+  indicatorIcon: {
+    fontSize: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+
+  indicatorLinked: {
+    color: tokens.colorBrandForeground2,
+  },
+
+  indicatorActivity: {
+    color: tokens.colorNeutralForeground4,
+  },
+
+  indicatorDot: {
+    width: '4px',
+    height: '4px',
+    ...shorthands.borderRadius('50%'),
+    flexShrink: 0,
+  },
+
+  indicatorDotLinked: {
+    backgroundColor: tokens.colorBrandForeground2,
+  },
+
+  indicatorDotActivity: {
+    backgroundColor: tokens.colorNeutralForeground4,
+  },
 });
 
 // ============================================
@@ -257,6 +311,8 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onClick }) => {
         return <DocumentRegular />;
     }
   };
+
+  const hasIndicators = document.linkedToSuggestion || document.recentActivity;
 
   const handleClick = () => {
     onClick?.(document);
@@ -306,6 +362,25 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onClick }) => {
           <Text className={styles.metadata}>
             Case: {document.caseNumber}
           </Text>
+        )}
+
+        {hasIndicators && (
+          <div className={styles.indicatorsRow}>
+            {document.linkedToSuggestion && (
+              <span className={`${styles.indicator} ${styles.indicatorLinked}`}>
+                <span className={`${styles.indicatorDot} ${styles.indicatorDotLinked}`} />
+                <span className={styles.indicatorIcon}><LinkRegular /></span>
+                Linked to suggested entry
+              </span>
+            )}
+            {document.recentActivity && (
+              <span className={`${styles.indicator} ${styles.indicatorActivity}`}>
+                <span className={`${styles.indicatorDot} ${styles.indicatorDotActivity}`} />
+                <span className={styles.indicatorIcon}><PulseRegular /></span>
+                Recent work activity
+              </span>
+            )}
+          </div>
         )}
       </div>
     </Card>

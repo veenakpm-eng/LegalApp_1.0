@@ -144,6 +144,8 @@ const sampleDocuments: Document[] = [
     modifiedDate: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
     caseName: 'Johnson v. Tech Corp',
     caseNumber: '2024-CV-1234',
+    linkedToSuggestion: true,
+    recentActivity: true,
   },
   {
     id: '2',
@@ -152,6 +154,7 @@ const sampleDocuments: Document[] = [
     modifiedDate: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
     caseName: 'ABC Corp Matter',
     caseNumber: '2024-CV-9999',
+    recentActivity: true,
   },
   {
     id: '3',
@@ -160,6 +163,7 @@ const sampleDocuments: Document[] = [
     modifiedDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
     caseName: 'Wilson Settlement',
     caseNumber: '2024-CV-5678',
+    linkedToSuggestion: true,
   },
   {
     id: '4',
