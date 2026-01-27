@@ -13,6 +13,7 @@ import {
 import Sidebar from './components/Sidebar/Sidebar';
 import DocumentsView from './views/DocumentsView/DocumentsView';
 import CasesView from './views/CasesView/CasesView';
+import TimeEntriesView from './views/TimeEntriesView/TimeEntriesView';
 import SettingsView from './views/SettingsView/SettingsView';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
@@ -363,14 +364,7 @@ const App: React.FC = () => {
       case 'timeEntries':
         return (
           <div className={contentClass}>
-            <div className={styles.placeholderView}>
-              <div className={styles.placeholderIcon}>⏱️</div>
-              <Text className={styles.placeholderTitle}>Time Entries View</Text>
-              <Text className={styles.placeholderDescription}>
-                Review and manage your time entries before syncing to Clio. Confirm auto-captured entries,
-                edit details, and ensure accurate billing records for all your work.
-              </Text>
-            </div>
+            <TimeEntriesView />
           </div>
         );
 
