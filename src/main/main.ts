@@ -7,13 +7,15 @@ let flyoutWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
 let isTrackingActive = true; // Track current state for menu updates
+let needsReviewCount = 0; // Number of entries needing review
 let currentTooltip = 'LegalApp · Tracking · 0h 0m today';
 
 /**
  * Get the appropriate tray icon based on the current state
  */
-const getTrayIcon = (state: 'active' | 'idle'): NativeImage => {
-  const iconName = state === 'active' ? 'tray-active.png' : 'tray-idle.png';
+const getTrayIcon = (state: 'active' | 'idle' | 'needs-review'): NativeImage => {
+  // needs-review uses the active icon (tracking is still running)
+  const iconName = state === 'idle' ? 'tray-idle.png' : 'tray-active.png';
   const iconPath = app.isPackaged
     ? path.join(process.resourcesPath, 'assets', iconName)
     : path.join(__dirname, '../../assets', iconName);
@@ -227,6 +229,21 @@ const updateTrayMenu = (): void => {
         }
       },
     },
+    ...(needsReviewCount > 0
+      ? [
+          {
+            label: `Review Entries (${needsReviewCount})`,
+            click: () => {
+              if (mainWindow) {
+                mainWindow.show();
+                mainWindow.focus();
+              } else {
+                createWindow();
+              }
+            },
+          },
+        ]
+      : []),
     {
       label: 'Open Activity Feed',
       click: () => {
@@ -293,10 +310,11 @@ const createTray = (): void => {
  */
 const setupIPCHandlers = (): void => {
   // Handle tray state changes from renderer
-  ipcMain.on('tray:set-state', (_event, state: 'active' | 'idle') => {
+  ipcMain.on('tray:set-state', (_event, state: 'active' | 'idle' | 'needs-review') => {
     if (tray) {
       tray.setImage(getTrayIcon(state));
-      isTrackingActive = state === 'active';
+      isTrackingActive = state !== 'idle';
+      needsReviewCount = state === 'needs-review' ? 2 : 0;
       updateTrayMenu();
     }
   });

@@ -10,7 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Tray control APIs
   tray: {
-    setState: (state: 'active' | 'idle') =>
+    setState: (state: 'active' | 'idle' | 'needs-review') =>
       ipcRenderer.send('tray:set-state', state),
     updateTooltip: (text: string) =>
       ipcRenderer.send('tray:update-tooltip', text),

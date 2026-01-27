@@ -19,6 +19,7 @@ import {
   ClockRegular,
   ArrowSyncRegular,
   DismissCircleRegular,
+  NoteRegular,
 } from '@fluentui/react-icons';
 
 const useStyles = makeStyles({
@@ -94,6 +95,27 @@ const useStyles = makeStyles({
   statusDisconnected: {
     backgroundColor: tokens.colorNeutralForeground4,
   },
+  statusNeedsReview: {
+    backgroundColor: '#0078D4', // Calm brand blue — informative, not alarming
+  },
+  badge: {
+    position: 'absolute',
+    top: '-4px',
+    right: '-4px',
+    minWidth: '16px',
+    height: '16px',
+    ...shorthands.borderRadius('8px'),
+    backgroundColor: '#0078D4',
+    color: '#fff',
+    fontSize: '10px',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shorthands.padding('0', '4px'),
+    ...shorthands.border('2px', 'solid', tokens.colorNeutralBackground1),
+    lineHeight: '1',
+  },
   statusLabel: {
     fontSize: '12px',
     fontWeight: '500',
@@ -145,7 +167,7 @@ interface TrayDemoProps {
   onNavigateToActivity?: () => void;
 }
 
-type TrayStatus = 'tracking' | 'paused' | 'disconnected';
+type TrayStatus = 'tracking' | 'paused' | 'disconnected' | 'needs-review';
 
 const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
   const styles = useStyles();
@@ -159,10 +181,18 @@ const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
   };
 
   const handlePauseResume = () => {
-    if (status === 'tracking') {
+    if (status === 'tracking' || status === 'needs-review') {
       setStatus('paused');
     } else if (status === 'paused') {
       setStatus('tracking');
+    }
+  };
+
+  const handleToggleNeedsReview = () => {
+    if (status === 'needs-review') {
+      setStatus('tracking');
+    } else {
+      setStatus('needs-review');
     }
   };
 
@@ -207,6 +237,13 @@ const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
           labelColor: tokens.colorNeutralForeground4,
           tooltip: 'LegalApp · Disconnected',
         };
+      case 'needs-review':
+        return {
+          dotClass: styles.statusNeedsReview,
+          label: 'Needs Review',
+          labelColor: '#0078D4',
+          tooltip: 'LegalApp · 2 entries need review',
+        };
     }
   };
 
@@ -234,6 +271,16 @@ const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
             This simulates the background tray experience
           </Text>
 
+          <Button
+            appearance="outline"
+            size="small"
+            icon={<NoteRegular />}
+            onClick={handleToggleNeedsReview}
+            style={{ marginBottom: '12px' }}
+          >
+            {status === 'needs-review' ? 'Clear Review State' : 'Simulate Needs Review'}
+          </Button>
+
           <Divider />
 
           {/* Tray Icon Simulation */}
@@ -243,6 +290,9 @@ const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
               <div className={styles.iconContainer}>
                 <div className={styles.appIcon}>LA</div>
                 <div className={`${styles.statusDot} ${statusConfig.dotClass}`} />
+                {status === 'needs-review' && (
+                  <div className={styles.badge}>2</div>
+                )}
               </div>
               <Text className={styles.statusLabel} style={{ color: statusConfig.labelColor }}>
                 {statusConfig.label}
@@ -262,7 +312,7 @@ const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
           <div className={styles.menuSection}>
             <div className={styles.sectionLabel}>Right-Click Menu Simulation</div>
 
-            {status === 'tracking' ? (
+            {status === 'tracking' || status === 'needs-review' ? (
               <Button
                 appearance="subtle"
                 className={styles.menuItem}
@@ -279,6 +329,17 @@ const TrayDemo: React.FC<TrayDemoProps> = ({ onNavigateToActivity }) => {
                 onClick={handlePauseResume}
               >
                 Resume Tracking
+              </Button>
+            )}
+
+            {status === 'needs-review' && (
+              <Button
+                appearance="subtle"
+                className={styles.menuItem}
+                icon={<NoteRegular />}
+                onClick={handleOpenActivityFeed}
+              >
+                Review Entries (2)
               </Button>
             )}
 
