@@ -78,6 +78,8 @@ export interface TimeEntriesViewProps {
   onBulkConfirm?: (entries: TimeEntry[]) => void;
   /** Callback when bulk delete is clicked */
   onBulkDelete?: (entries: TimeEntry[]) => void;
+  /** ID of a suggested entry to highlight (from Activity view navigation) */
+  highlightedSuggestedEntryId?: string | null;
 }
 
 // ============================================
@@ -725,6 +727,18 @@ const useSuggestedCardStyles = makeStyles({
     pointerEvents: 'none' as any,
   },
 
+  cardHighlighted: {
+    boxShadow: '0 0 0 2px rgba(0, 90, 158, 0.5), 0 2px 8px rgba(0, 90, 158, 0.15)',
+    animationName: {
+      '0%': { boxShadow: '0 0 0 2px rgba(0, 90, 158, 0.5), 0 2px 8px rgba(0, 90, 158, 0.15)' },
+      '50%': { boxShadow: '0 0 0 3px rgba(0, 90, 158, 0.35), 0 2px 12px rgba(0, 90, 158, 0.2)' },
+      '100%': { boxShadow: '0 0 0 2px rgba(0, 90, 158, 0.5), 0 2px 8px rgba(0, 90, 158, 0.15)' },
+    },
+    animationDuration: '1.5s',
+    animationIterationCount: '2',
+    animationTimingFunction: 'ease-in-out',
+  },
+
   content: {
     display: 'flex',
     flexDirection: 'column',
@@ -978,7 +992,12 @@ const useSuggestedCardStyles = makeStyles({
 
 type SuggestedCardState = 'suggested' | 'confirmed' | 'dismissed';
 
-const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry }) => {
+interface SuggestedTimeEntryCardProps {
+  entry: SuggestedTimeEntry;
+  highlighted?: boolean;
+}
+
+const SuggestedTimeEntryCard: React.FC<SuggestedTimeEntryCardProps> = ({ entry, highlighted }) => {
   const styles = useSuggestedCardStyles();
   const [cardState, setCardState] = useState<SuggestedCardState>('suggested');
   const [isEditing, setIsEditing] = useState(false);
@@ -988,6 +1007,14 @@ const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry
     description: entry.description,
   });
   const [isExplanationOpen, setIsExplanationOpen] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  // Scroll into view when highlighted
+  React.useEffect(() => {
+    if (highlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlighted]);
 
   const handleConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1043,10 +1070,11 @@ const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry
   const cardClassName = [
     styles.card,
     cardState === 'dismissed' ? styles.cardDismissed : '',
+    highlighted ? styles.cardHighlighted : '',
   ].filter(Boolean).join(' ');
 
   return (
-    <Card className={cardClassName}>
+    <Card ref={cardRef} className={cardClassName}>
       <div className={styles.content}>
         <div className={styles.header}>
           <div className={styles.leftHeader}>
@@ -1238,7 +1266,11 @@ const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry
 // SuggestedEntriesSection Component
 // ============================================
 
-const SuggestedEntriesSection: React.FC = () => {
+interface SuggestedEntriesSectionProps {
+  highlightedEntryId?: string | null;
+}
+
+const SuggestedEntriesSection: React.FC<SuggestedEntriesSectionProps> = ({ highlightedEntryId }) => {
   const styles = useSuggestedCardStyles();
 
   return (
@@ -1252,7 +1284,11 @@ const SuggestedEntriesSection: React.FC = () => {
       </div>
       <div className={styles.suggestedList}>
         {suggestedTimeEntries.map((entry) => (
-          <SuggestedTimeEntryCard key={entry.id} entry={entry} />
+          <SuggestedTimeEntryCard
+            key={entry.id}
+            entry={entry}
+            highlighted={entry.id === highlightedEntryId}
+          />
         ))}
       </div>
     </div>
@@ -1363,6 +1399,7 @@ const TimeEntriesView: React.FC<TimeEntriesViewProps> = ({
   onDelete,
   onBulkConfirm,
   onBulkDelete,
+  highlightedSuggestedEntryId,
 }) => {
   const styles = useStyles();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1428,7 +1465,7 @@ const TimeEntriesView: React.FC<TimeEntriesViewProps> = ({
   if (timeEntries.length === 0) {
     return (
       <div className={styles.container}>
-        <SuggestedEntriesSection />
+        <SuggestedEntriesSection highlightedEntryId={highlightedSuggestedEntryId} />
       </div>
     );
   }
