@@ -11,6 +11,7 @@ import {
   Toolbar,
   ToolbarButton,
   ToolbarDivider,
+  Input,
 } from '@fluentui/react-components';
 import {
   ClockRegular,
@@ -24,6 +25,7 @@ import {
   CheckmarkCircleFilled,
   DeleteDismissFilled,
   EditFilled,
+  DismissRegular,
 } from '@fluentui/react-icons';
 
 /**
@@ -621,6 +623,484 @@ const TimeEntryCard: React.FC<TimeEntryCardProps> = ({
 };
 
 // ============================================
+// Suggested Time Entry Types & Mock Data
+// ============================================
+
+export interface SuggestedTimeEntry {
+  id: string;
+  caseName: string;
+  caseNumber: string;
+  taskType: string;
+  description: string;
+  duration: number; // in hours (decimal)
+}
+
+const suggestedTimeEntries: SuggestedTimeEntry[] = [
+  {
+    id: 'sug-1',
+    caseName: 'Johnson v. Tech Corp',
+    caseNumber: '2024-CV-1234',
+    taskType: 'Client Communication',
+    description: 'Reviewed and responded to client email regarding discovery deadline',
+    duration: 0.3,
+  },
+  {
+    id: 'sug-2',
+    caseName: 'ABC Corp Matter',
+    caseNumber: '2024-CV-9999',
+    taskType: 'Document Review',
+    description: 'Reviewed contract amendments and tracked changes in agreement draft',
+    duration: 1.2,
+  },
+  {
+    id: 'sug-3',
+    caseName: 'Anderson v. State',
+    caseNumber: '2024-CR-7890',
+    taskType: 'Legal Research',
+    description: 'Researched case law precedents for summary judgment motion',
+    duration: 0.5,
+  },
+];
+
+// ============================================
+// Suggested Card Styles
+// ============================================
+
+const useSuggestedCardStyles = makeStyles({
+  card: {
+    ...shorthands.padding('16px', '20px'),
+    backgroundColor: tokens.colorNeutralBackground1,
+    boxShadow: 'var(--shadow-card)',
+    ...shorthands.borderRadius('var(--radius-medium)'),
+    transitionProperty: 'box-shadow, transform, opacity',
+    transitionDuration: '300ms',
+    transitionTimingFunction: tokens.curveEasyEase,
+    position: 'relative',
+
+    ':hover': {
+      boxShadow: 'var(--shadow-card-hover)',
+      transform: 'translateY(-1px)',
+    },
+
+    ':focus-visible': {
+      ...shorthands.outline('2px', 'solid', tokens.colorBrandStroke1),
+      outlineOffset: '2px',
+    },
+  },
+
+  cardDismissed: {
+    opacity: 0.35,
+    transform: 'scale(0.98) !important' as any,
+    pointerEvents: 'none' as any,
+  },
+
+  content: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('12px'),
+  },
+
+  header: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    ...shorthands.gap('16px'),
+    flexWrap: 'wrap',
+  },
+
+  leftHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+    flex: 1,
+    minWidth: 0,
+  },
+
+  badgeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('10px'),
+  },
+
+  badge: {
+    fontSize: '11px',
+    fontWeight: '600',
+    ...shorthands.padding('4px', '10px'),
+    ...shorthands.borderRadius('10px'),
+  },
+
+  taskType: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground2,
+  },
+
+  caseRow: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('8px'),
+  },
+
+  caseIcon: {
+    fontSize: '16px',
+    color: tokens.colorBrandForeground1,
+    flexShrink: 0,
+  },
+
+  caseName: {
+    fontFamily: 'Segoe UI Variable, Segoe UI, sans-serif',
+    fontSize: '15px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground1,
+    lineHeight: '20px',
+  },
+
+  caseNumber: {
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground3,
+    fontWeight: '500',
+  },
+
+  description: {
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground2,
+    lineHeight: '18px',
+  },
+
+  durationSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    flexShrink: 0,
+  },
+
+  duration: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: tokens.colorBrandForeground1,
+    lineHeight: '26px',
+  },
+
+  durationUnit: {
+    fontSize: '13px',
+    fontWeight: '500',
+    color: tokens.colorNeutralForeground3,
+  },
+
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+
+  actionButtons: {
+    display: 'flex',
+    ...shorthands.gap('8px'),
+  },
+
+  confirmedMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+  },
+
+  dismissedMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    ...shorthands.gap('6px'),
+  },
+
+  editFields: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('10px'),
+    ...shorthands.padding('4px', '0'),
+  },
+
+  editRow: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('4px'),
+  },
+
+  editLabel: {
+    fontSize: '12px',
+    fontWeight: '500',
+    color: tokens.colorNeutralForeground3,
+  },
+
+  suggestedSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('16px'),
+  },
+
+  suggestedHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('6px'),
+  },
+
+  suggestedTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: tokens.colorNeutralForeground1,
+    lineHeight: '22px',
+  },
+
+  suggestedSubtitle: {
+    fontSize: '13px',
+    color: tokens.colorNeutralForeground3,
+    lineHeight: '18px',
+    maxWidth: '600px',
+  },
+
+  suggestedList: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('12px'),
+  },
+});
+
+// ============================================
+// SuggestedTimeEntryCard Component
+// ============================================
+
+type SuggestedCardState = 'suggested' | 'confirmed' | 'dismissed';
+
+const SuggestedTimeEntryCard: React.FC<{ entry: SuggestedTimeEntry }> = ({ entry }) => {
+  const styles = useSuggestedCardStyles();
+  const [cardState, setCardState] = useState<SuggestedCardState>('suggested');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    duration: entry.duration.toString(),
+    taskType: entry.taskType,
+    description: entry.description,
+  });
+
+  const handleConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCardState('confirmed');
+    setIsEditing(false);
+  };
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCardState('dismissed');
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+  };
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditData({
+      duration: entry.duration.toString(),
+      taskType: entry.taskType,
+      description: entry.description,
+    });
+    setIsEditing(false);
+  };
+
+  const getBadgeConfig = () => {
+    switch (cardState) {
+      case 'suggested':
+        return { label: 'Suggested', color: '#005A9E', bg: 'rgba(0, 90, 158, 0.1)' };
+      case 'confirmed':
+        return { label: 'Confirmed', color: '#0E7C0E', bg: 'rgba(14, 124, 14, 0.1)' };
+      case 'dismissed':
+        return { label: 'Dismissed', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.1)' };
+    }
+  };
+
+  const badge = getBadgeConfig();
+  const displayDuration = parseFloat(editData.duration) || 0;
+
+  const cardClassName = [
+    styles.card,
+    cardState === 'dismissed' ? styles.cardDismissed : '',
+  ].filter(Boolean).join(' ');
+
+  return (
+    <Card className={cardClassName}>
+      <div className={styles.content}>
+        <div className={styles.header}>
+          <div className={styles.leftHeader}>
+            {/* Badge and Task Type */}
+            <div className={styles.badgeRow}>
+              <Badge
+                className={styles.badge}
+                style={{ color: badge.color, backgroundColor: badge.bg }}
+              >
+                {badge.label}
+              </Badge>
+              {!isEditing && (
+                <Text className={styles.taskType}>{editData.taskType}</Text>
+              )}
+            </div>
+
+            {/* Case name */}
+            <div className={styles.caseRow}>
+              <BriefcaseRegular className={styles.caseIcon} />
+              <Text className={styles.caseName}>{entry.caseName}</Text>
+              <Text className={styles.caseNumber}>• {entry.caseNumber}</Text>
+            </div>
+
+            {/* Description or edit fields */}
+            {isEditing ? (
+              <div className={styles.editFields}>
+                <div className={styles.editRow}>
+                  <label className={styles.editLabel}>Task Type</label>
+                  <Input
+                    value={editData.taskType}
+                    onChange={(_e, data) => setEditData(prev => ({ ...prev, taskType: data.value }))}
+                    size="small"
+                  />
+                </div>
+                <div className={styles.editRow}>
+                  <label className={styles.editLabel}>Duration (hrs)</label>
+                  <Input
+                    value={editData.duration}
+                    onChange={(_e, data) => setEditData(prev => ({ ...prev, duration: data.value }))}
+                    size="small"
+                    type="number"
+                    step={0.1}
+                    min={0}
+                  />
+                </div>
+                <div className={styles.editRow}>
+                  <label className={styles.editLabel}>Description</label>
+                  <Input
+                    value={editData.description}
+                    onChange={(_e, data) => setEditData(prev => ({ ...prev, description: data.value }))}
+                    size="small"
+                  />
+                </div>
+              </div>
+            ) : (
+              <Text className={styles.description}>{editData.description}</Text>
+            )}
+          </div>
+
+          {/* Duration display */}
+          {!isEditing && (
+            <div className={styles.durationSection}>
+              <Text className={styles.duration}>
+                {displayDuration.toFixed(1)}{' '}
+                <span className={styles.durationUnit}>hrs</span>
+              </Text>
+            </div>
+          )}
+        </div>
+
+        {/* Actions footer */}
+        <div className={styles.footer}>
+          {cardState === 'suggested' && (
+            <div className={styles.actionButtons}>
+              {isEditing ? (
+                <>
+                  <Button
+                    appearance="primary"
+                    size="small"
+                    icon={<CheckmarkRegular />}
+                    onClick={handleSave}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    appearance="subtle"
+                    size="small"
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    appearance="primary"
+                    size="small"
+                    icon={<CheckmarkRegular />}
+                    onClick={handleConfirm}
+                  >
+                    Confirm
+                  </Button>
+                  <Button
+                    appearance="subtle"
+                    size="small"
+                    icon={<EditRegular />}
+                    onClick={handleEdit}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    appearance="subtle"
+                    size="small"
+                    icon={<DismissRegular />}
+                    onClick={handleDismiss}
+                  >
+                    Dismiss
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
+          {cardState === 'confirmed' && (
+            <div className={styles.confirmedMessage}>
+              <CheckmarkCircleFilled style={{ color: '#0E7C0E', fontSize: '16px' }} />
+              <Text style={{ color: '#0E7C0E', fontSize: '13px', fontWeight: '500' }}>
+                Entry confirmed
+              </Text>
+            </div>
+          )}
+
+          {cardState === 'dismissed' && (
+            <div className={styles.dismissedMessage}>
+              <Text style={{ color: '#6B7280', fontSize: '13px', fontWeight: '500' }}>
+                Entry dismissed
+              </Text>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+// ============================================
+// SuggestedEntriesSection Component
+// ============================================
+
+const SuggestedEntriesSection: React.FC = () => {
+  const styles = useSuggestedCardStyles();
+
+  return (
+    <div className={styles.suggestedSection}>
+      <div className={styles.suggestedHeader}>
+        <Text className={styles.suggestedTitle}>Suggested Time Entries</Text>
+        <Text className={styles.suggestedSubtitle}>
+          Based on your recent activity, the following time entries may be relevant.
+          Review and confirm to add them to your records.
+        </Text>
+      </div>
+      <div className={styles.suggestedList}>
+        {suggestedTimeEntries.map((entry) => (
+          <SuggestedTimeEntryCard key={entry.id} entry={entry} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // SummaryStatsBar Component
 // ============================================
 
@@ -785,18 +1265,11 @@ const TimeEntriesView: React.FC<TimeEntriesViewProps> = ({
     setSelectedIds(new Set());
   };
 
-  // Show empty state if no entries
+  // Show suggested entries when no confirmed entries exist
   if (timeEntries.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <div className={styles.emptyStateIcon}>
-          <ClockRegular />
-        </div>
-        <Text className={styles.emptyStateTitle}>No time entries yet</Text>
-        <Text className={styles.emptyStateDescription}>
-          Time entries you create or that are automatically captured will appear here.
-          Start tracking your time to see your entries.
-        </Text>
+      <div className={styles.container}>
+        <SuggestedEntriesSection />
       </div>
     );
   }
