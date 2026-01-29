@@ -9,12 +9,14 @@ import {
 } from '@fluentui/react-components';
 import {
   SettingsRegular,
+  RecordRegular,
 } from '@fluentui/react-icons';
 import Sidebar from './components/Sidebar/Sidebar';
 import DocumentsView from './views/DocumentsView/DocumentsView';
 import CasesView from './views/CasesView/CasesView';
 import TimeEntriesView from './views/TimeEntriesView/TimeEntriesView';
 import ActivityView from './views/ActivityView/ActivityView';
+import ActivityLoggerView from './views/ActivityLoggerView/ActivityLoggerView';
 import SettingsView from './views/SettingsView/SettingsView';
 import SuggestionPopup from './components/SuggestionPopup';
 import TrayDemo from './components/TrayDemo';
@@ -37,7 +39,7 @@ import type { Case } from './views/CasesView/CasesView';
  */
 
 // View type definition
-type ViewType = 'documents' | 'cases' | 'activity' | 'timeEntries' | 'settings';
+type ViewType = 'documents' | 'cases' | 'activity' | 'activityLogger' | 'timeEntries' | 'settings';
 
 // Styles
 const useStyles = makeStyles({
@@ -382,6 +384,13 @@ const App: React.FC = () => {
           </div>
         );
 
+      case 'activityLogger':
+        return (
+          <div className={contentClass}>
+            <ActivityLoggerView />
+          </div>
+        );
+
       case 'timeEntries':
         return (
           <div className={contentClass}>
@@ -463,6 +472,12 @@ const App: React.FC = () => {
                 label: 'Activity',
                 icon: <span>🕐</span>,
                 ariaLabel: 'Navigate to Activity',
+              },
+              {
+                id: 'activityLogger',
+                label: 'Activity Logger',
+                icon: <RecordRegular />,
+                ariaLabel: 'Navigate to Activity Logger',
               },
               {
                 id: 'timeEntries',
